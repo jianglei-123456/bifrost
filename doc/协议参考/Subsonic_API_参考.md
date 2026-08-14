@@ -12,7 +12,7 @@
 
 要点：
 
-- **传输方式**：HTTP GET 为主，路径形式为 `/rest/<method>.view`（例如 `/rest/ping.view`）。OpenSubsonic 额外正式支持 `application/x-www-form-urlencoded` 的 **POST**（扩展名 `formPost`），用于突破 URL 长度限制（例如创建含大量歌曲的播放列表时）。
+- **传输方式**：HTTP GET 为主，路径形式为 `/rest/<method>.view`（例如 `/rest/ping.view`）。OpenSubsonic 额外正式支持 `application/x-www-form-urlencoded` 的 **POST**（扩展名 `formPost`），用于突破 URL 长度限制（例如创建含大量歌曲的播放列表时）。Bifrost 对每个端点同时接受带与不带 `.view` 后缀的路径（`/rest/ping` 与 `/rest/ping.view` 等价，与 Navidrome/gonic 行为一致）。
 - **输出格式**：所有非二进制端点返回 XML 文档（默认），通过参数 `f` 切换：
   - `f=xml`（默认，自 1.0.0）
   - `f=json`（自 1.4.0）
@@ -182,7 +182,7 @@ curl -v -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
 
 ## 4. 完整端点清单
 
-以下按官方分类列出全部端点（标注 **since** 版本；`[OS]` 为 OpenSubsonic 新增）。除特别说明外，端点成功时都返回 `<subsonic-response>` 信封。方法路径一律为 `GET /rest/<name>.view`。
+以下按官方分类列出全部端点（标注 **since** 版本；`[OS]` 为 OpenSubsonic 新增）。除特别说明外，端点成功时都返回 `<subsonic-response>` 信封。方法路径一律为 `GET /rest/<name>.view`；Bifrost 实现中 `.view` 后缀可省略（`GET /rest/<name>` 等价）。
 
 ### 4.1 System（系统）
 

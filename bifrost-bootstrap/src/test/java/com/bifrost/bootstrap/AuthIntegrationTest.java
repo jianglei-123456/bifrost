@@ -17,9 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,6 +116,18 @@ class AuthIntegrationTest {
     }
 
     @Test
+    void subsonicTokenAuthOkWithoutViewSuffix() throws Exception {
+        // 客户端可省略 .view 后缀（如 /rest/ping）
+        String salt = "abcdef";
+        String token = SubsonicTokenUtil.token(PASSWORD, salt);
+        mockMvc.perform(get("/rest/ping")
+                        .param("u", USERNAME).param("t", token).param("s", salt)
+                        .param("v", "1.16.1").param("c", "test").param("f", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+    }
+
+    @Test
     void subsonicWrongPasswordReturns40() throws Exception {
         mockMvc.perform(get("/rest/ping.view")
                         .param("u", USERNAME).param("t", "badbadbadbadbadbadbadbadbadbadbad")
@@ -173,6 +188,39 @@ class AuthIntegrationTest {
         mockMvc.perform(get("/rest/getOpenSubsonicExtensions.view").param("f", "json"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(get("/rest/getOpenSubsonicExtensions").param("f", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+    }
+
+    @Test
+    void corsHeadersPresentOnSubsonicAndApi() throws Exception {
+        mockMvc.perform(get("/rest/ping.view")
+                        .header("Origin", "http://localhost:5173")
+                        .param("u", USERNAME).param("p", PASSWORD)
+                        .param("v", "1.16.1").param("c", "test").param("f", "json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+        mockMvc.perform(get("/api/ping")
+                        .header("Origin", "http://localhost:5173"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+    }
+
+    @Test
+    void corsPreflightAllowed() throws Exception {
+        mockMvc.perform(options("/rest/ping.view")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")));
+        mockMvc.perform(options("/api/scan")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
     }
 
     private static String basic(String username, String password) {

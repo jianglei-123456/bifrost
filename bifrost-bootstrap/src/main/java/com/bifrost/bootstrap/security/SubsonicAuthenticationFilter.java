@@ -32,8 +32,8 @@ public class SubsonicAuthenticationFilter extends OncePerRequestFilter {
     public static final String ATTR_USERNAME = SubsonicAuthAttributes.USERNAME;
     /** 请求属性：客户端名（c 参数，Q20 playerId） */
     public static final String ATTR_CLIENT = SubsonicAuthAttributes.CLIENT;
-    /** 免认证端点 */
-    private static final String OPEN_SUBSONIC_EXTENSIONS = "getOpenSubsonicExtensions.view";
+    /** 免认证端点（容忍带/不带 .view 后缀，Q21） */
+    private static final String OPEN_SUBSONIC_EXTENSIONS = "getOpenSubsonicExtensions";
 
     private static final String MIN_SUPPORTED_VERSION = "1.0.0";
 
@@ -54,7 +54,7 @@ public class SubsonicAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String uri = request.getRequestURI();
-        if (uri != null && uri.endsWith(OPEN_SUBSONIC_EXTENSIONS)) {
+        if (uri != null && isOpenSubsonicExtensionsPath(uri)) {
             chain.doFilter(request, response); // 免认证（Q21）
             return;
         }
@@ -113,6 +113,15 @@ public class SubsonicAuthenticationFilter extends OncePerRequestFilter {
         request.setAttribute(ATTR_USERNAME, user.getUsername());
         request.setAttribute(ATTR_CLIENT, c);
         chain.doFilter(request, response);
+    }
+
+    /** 免认证端点路径判断：最后一段为 getOpenSubsonicExtensions（.view 后缀可选）。 */
+    private static boolean isOpenSubsonicExtensionsPath(String uri) {
+        String last = uri.substring(uri.lastIndexOf('/') + 1);
+        if (last.endsWith(".view")) {
+            last = last.substring(0, last.length() - ".view".length());
+        }
+        return OPEN_SUBSONIC_EXTENSIONS.equals(last);
     }
 
     /** 协议错误响应：HTTP 200 + status=failed（XML 默认，f=json 切 JSON）。 */

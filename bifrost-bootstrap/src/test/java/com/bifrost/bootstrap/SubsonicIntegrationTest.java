@@ -118,6 +118,24 @@ class SubsonicIntegrationTest {
     }
 
     @Test
+    void endpointsAcceptPathWithoutViewSuffix() throws Exception {
+        // 协议端点带/不带 .view 后缀均可用（Navidrome/gonic 同款兼容）
+        mockMvc.perform(base("/rest/ping"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getMusicFolders"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.musicFolders.musicFolder[0].name").value("测试库"));
+        mockMvc.perform(base("/rest/getOpenSubsonicExtensions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        // 未实现端点无后缀同样返回 error 0（而非 404）
+        mockMvc.perform(base("/rest/getGenres"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(0));
+    }
+
+    @Test
     void musicFoldersAndIndexes() throws Exception {
         mockMvc.perform(base("/rest/getMusicFolders.view"))
                 .andExpect(status().isOk())

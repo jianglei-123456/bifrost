@@ -80,19 +80,19 @@ public class SubsonicController {
 
     // ================= System =================
 
-    @GetMapping("/ping.view")
+    @GetMapping({"/ping.view", "/ping"})
     public ResponseEntity<String> ping(HttpServletRequest request) {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping("/getLicense.view")
+    @GetMapping({"/getLicense.view", "/getLicense"})
     public ResponseEntity<String> getLicense(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setLicense(new com.bifrost.adapter.syrinx.subsonic.dto.License());
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getOpenSubsonicExtensions.view")
+    @GetMapping({"/getOpenSubsonicExtensions.view", "/getOpenSubsonicExtensions"})
     public ResponseEntity<String> getOpenSubsonicExtensions(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setOpenSubsonicExtensions(assembler.buildOpenSubsonicExtensions());
@@ -101,14 +101,14 @@ public class SubsonicController {
 
     // ================= Browsing =================
 
-    @GetMapping("/getMusicFolders.view")
+    @GetMapping({"/getMusicFolders.view", "/getMusicFolders"})
     public ResponseEntity<String> getMusicFolders(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setMusicFolders(assembler.buildMusicFolders());
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getIndexes.view")
+    @GetMapping({"/getIndexes.view", "/getIndexes"})
     public ResponseEntity<String> getIndexes(HttpServletRequest request,
                                              @RequestParam(required = false) String musicFolderId,
                                              @RequestParam(required = false) Long ifModifiedSince) {
@@ -124,7 +124,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getMusicDirectory.view")
+    @GetMapping({"/getMusicDirectory.view", "/getMusicDirectory"})
     public ResponseEntity<String> getMusicDirectory(HttpServletRequest request, @RequestParam String id) {
         Directory directory = resolveDirectory(id);
         if (directory == null) {
@@ -135,7 +135,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getArtists.view")
+    @GetMapping({"/getArtists.view", "/getArtists"})
     public ResponseEntity<String> getArtists(HttpServletRequest request,
                                              @RequestParam(required = false) String musicFolderId) {
         SubsonicResponse response = ok(request);
@@ -143,7 +143,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getArtist.view")
+    @GetMapping({"/getArtist.view", "/getArtist"})
     public ResponseEntity<String> getArtist(HttpServletRequest request, @RequestParam String id) {
         ArtistID3 artist;
         if (SubsonicIds.isUnknownArtist(id)) {
@@ -160,7 +160,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getAlbum.view")
+    @GetMapping({"/getAlbum.view", "/getAlbum"})
     public ResponseEntity<String> getAlbum(HttpServletRequest request, @RequestParam String id) {
         Long albumId = SubsonicIds.parseAlbum(id);
         AlbumID3 album = albumId == null ? null : assembler.buildAlbumDetail(albumId);
@@ -172,7 +172,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getSong.view")
+    @GetMapping({"/getSong.view", "/getSong"})
     public ResponseEntity<String> getSong(HttpServletRequest request, @RequestParam String id) {
         Long trackId = SubsonicIds.parseTrack(id);
         Track track = trackId == null ? null : trackRepository.findById(trackId).orElse(null);
@@ -186,7 +186,7 @@ public class SubsonicController {
 
     // ================= Lists =================
 
-    @GetMapping("/getAlbumList.view")
+    @GetMapping({"/getAlbumList.view", "/getAlbumList"})
     public ResponseEntity<String> getAlbumList(HttpServletRequest request,
                                                @RequestParam String type,
                                                @RequestParam(defaultValue = "10") int size,
@@ -211,7 +211,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getAlbumList2.view")
+    @GetMapping({"/getAlbumList2.view", "/getAlbumList2"})
     public ResponseEntity<String> getAlbumList2(HttpServletRequest request,
                                                 @RequestParam String type,
                                                 @RequestParam(defaultValue = "10") int size,
@@ -236,7 +236,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getRandomSongs.view")
+    @GetMapping({"/getRandomSongs.view", "/getRandomSongs"})
     public ResponseEntity<String> getRandomSongs(HttpServletRequest request,
                                                  @RequestParam(defaultValue = "10") int size,
                                                  @RequestParam(required = false) String genre,
@@ -249,14 +249,14 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getNowPlaying.view")
+    @GetMapping({"/getNowPlaying.view", "/getNowPlaying"})
     public ResponseEntity<String> getNowPlaying(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setNowPlaying(assembler.buildNowPlaying());
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getStarred.view")
+    @GetMapping({"/getStarred.view", "/getStarred"})
     public ResponseEntity<String> getStarred(HttpServletRequest request,
                                              @RequestParam(required = false) String musicFolderId) {
         SubsonicResponse response = ok(request);
@@ -264,7 +264,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getStarred2.view")
+    @GetMapping({"/getStarred2.view", "/getStarred2"})
     public ResponseEntity<String> getStarred2(HttpServletRequest request,
                                               @RequestParam(required = false) String musicFolderId) {
         SubsonicResponse response = ok(request);
@@ -274,7 +274,7 @@ public class SubsonicController {
 
     // ================= Searching =================
 
-    @GetMapping("/search2.view")
+    @GetMapping({"/search2.view", "/search2"})
     public ResponseEntity<String> search2(HttpServletRequest request,
                                           @RequestParam(required = false) String query,
                                           @RequestParam(defaultValue = "20") int artistCount,
@@ -290,7 +290,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/search3.view")
+    @GetMapping({"/search3.view", "/search3"})
     public ResponseEntity<String> search3(HttpServletRequest request,
                                           @RequestParam(required = false) String query,
                                           @RequestParam(defaultValue = "20") int artistCount,
@@ -309,14 +309,14 @@ public class SubsonicController {
 
     // ================= Playlists =================
 
-    @GetMapping("/getPlaylists.view")
+    @GetMapping({"/getPlaylists.view", "/getPlaylists"})
     public ResponseEntity<String> getPlaylists(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setPlaylists(assembler.buildPlaylists());
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getPlaylist.view")
+    @GetMapping({"/getPlaylist.view", "/getPlaylist"})
     public ResponseEntity<String> getPlaylist(HttpServletRequest request, @RequestParam String id) {
         Long playlistId = SubsonicIds.parsePlaylist(id);
         Playlist playlist = playlistId == null ? null : buildPlaylist(playlistId, true);
@@ -328,7 +328,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/createPlaylist.view")
+    @GetMapping({"/createPlaylist.view", "/createPlaylist"})
     public ResponseEntity<String> createPlaylist(HttpServletRequest request,
                                                  @RequestParam(required = false) String playlistId,
                                                  @RequestParam(required = false) String name,
@@ -359,7 +359,7 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping("/updatePlaylist.view")
+    @GetMapping({"/updatePlaylist.view", "/updatePlaylist"})
     public ResponseEntity<String> updatePlaylist(HttpServletRequest request,
                                                  @RequestParam String playlistId,
                                                  @RequestParam(required = false) String name,
@@ -399,7 +399,7 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping("/deletePlaylist.view")
+    @GetMapping({"/deletePlaylist.view", "/deletePlaylist"})
     public ResponseEntity<String> deletePlaylist(HttpServletRequest request, @RequestParam String id) {
         Long pid = SubsonicIds.parsePlaylist(id);
         if (pid == null) {
@@ -415,7 +415,7 @@ public class SubsonicController {
 
     // ================= Media =================
 
-    @GetMapping("/stream.view")
+    @GetMapping({"/stream.view", "/stream"})
     public ResponseEntity<?> stream(HttpServletRequest request, @RequestParam String id) throws IOException {
         Track track = resolveAvailableTrack(id);
         if (track == null) {
@@ -453,7 +453,7 @@ public class SubsonicController {
                 .body(new InputStreamResource(Files.newInputStream(file)));
     }
 
-    @GetMapping("/download.view")
+    @GetMapping({"/download.view", "/download"})
     public ResponseEntity<?> download(@RequestParam String id) throws IOException {
         Track track = resolveAvailableTrack(id);
         if (track == null) {
@@ -474,7 +474,7 @@ public class SubsonicController {
         return ResponseEntity.ok().headers(headers).body(new InputStreamResource(Files.newInputStream(file)));
     }
 
-    @GetMapping("/getCoverArt.view")
+    @GetMapping({"/getCoverArt.view", "/getCoverArt"})
     public ResponseEntity<?> getCoverArt(@RequestParam String id,
                                          @RequestParam(required = false) Integer size) {
         Long albumId = SubsonicIds.parseAlbum(id); // Q13：仅 al- 体系
@@ -487,7 +487,7 @@ public class SubsonicController {
 
     // ================= Annotation =================
 
-    @GetMapping("/star.view")
+    @GetMapping({"/star.view", "/star"})
     public ResponseEntity<String> star(HttpServletRequest request,
                                        @RequestParam(required = false) List<String> id,
                                        @RequestParam(required = false) List<String> albumId,
@@ -496,7 +496,7 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping("/unstar.view")
+    @GetMapping({"/unstar.view", "/unstar"})
     public ResponseEntity<String> unstar(HttpServletRequest request,
                                          @RequestParam(required = false) List<String> id,
                                          @RequestParam(required = false) List<String> albumId,
@@ -539,7 +539,7 @@ public class SubsonicController {
         }
     }
 
-    @GetMapping("/setRating.view")
+    @GetMapping({"/setRating.view", "/setRating"})
     public ResponseEntity<String> setRating(HttpServletRequest request,
                                             @RequestParam String id,
                                             @RequestParam int rating) {
@@ -551,7 +551,7 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping("/scrobble.view")
+    @GetMapping({"/scrobble.view", "/scrobble"})
     public ResponseEntity<String> scrobble(HttpServletRequest request,
                                            @RequestParam String id,
                                            @RequestParam(required = false) Long time,
@@ -566,14 +566,14 @@ public class SubsonicController {
 
     // ================= Scanning =================
 
-    @GetMapping("/getScanStatus.view")
+    @GetMapping({"/getScanStatus.view", "/getScanStatus"})
     public ResponseEntity<String> getScanStatus(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setScanStatus(assembler.buildScanStatus());
         return renderer.render(request, response);
     }
 
-    @GetMapping("/startScan.view")
+    @GetMapping({"/startScan.view", "/startScan"})
     public ResponseEntity<String> startScan(HttpServletRequest request) {
         // 后台触发，立即返回状态（Q 决策：扫描后台执行）
         CompletableFuture.runAsync(() -> {
@@ -590,14 +590,14 @@ public class SubsonicController {
 
     // ================= User =================
 
-    @GetMapping("/getUser.view")
+    @GetMapping({"/getUser.view", "/getUser"})
     public ResponseEntity<String> getUser(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setUser(assembler.buildUser(currentUsername(request)));
         return renderer.render(request, response);
     }
 
-    @GetMapping("/getUsers.view")
+    @GetMapping({"/getUsers.view", "/getUsers"})
     public ResponseEntity<String> getUsers(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setUsers(assembler.buildUsers(currentUsername(request))); // Q19：单用户返回当前用户
@@ -606,12 +606,12 @@ public class SubsonicController {
 
     // ================= 未实现端点兜底（Q3-A） =================
 
-    @GetMapping("/{method}.view")
+    @GetMapping({"/{method}.view", "/{method}"})
     public ResponseEntity<String> notImplementedGet(HttpServletRequest request) {
         return error(request, 0, "Not implemented");
     }
 
-    @PostMapping("/{method}.view")
+    @PostMapping({"/{method}.view", "/{method}"})
     public ResponseEntity<String> notImplementedPost(HttpServletRequest request) {
         return error(request, 0, "Not implemented");
     }

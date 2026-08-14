@@ -84,6 +84,9 @@ Subsonic 实体 ID 形态：ar-（艺术家）/ al-（专辑）/ tr-（曲目）
 **管理 REST（/api/**）**:
 管理契约端点集，供另一项目的 Vue Dashboard 消费。
 
+**管理端工程（Vue Dashboard）**:
+管理端（登录页/登录态/过期时间等前端逻辑）位于本仓库的**兄弟目录** `../bifrost-dashboard`（相对本仓库根目录，勿记绝对路径）；后端仅提供 `/api/**` 契约，登录过期等需求改动落在该工程（见其 `docs/adr/0002-auth-model.md`）。
+
 ## 账号
 
 **管理员（admin）**:

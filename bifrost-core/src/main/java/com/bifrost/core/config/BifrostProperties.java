@@ -37,6 +37,9 @@ public class BifrostProperties {
     /** Subsonic 服务配置 */
     private Subsonic subsonic = new Subsonic();
 
+    /** 跨域（CORS）配置 */
+    private Cors cors = new Cors();
+
     /** SQLite 数据库配置 */
     @Getter
     @Setter
@@ -98,5 +101,13 @@ public class BifrostProperties {
         private boolean enabled = true;
         /** 对外宣称 API 版本 */
         private String apiVersion = "1.16.1";
+    }
+
+    /** 跨域配置 */
+    @Getter
+    @Setter
+    public static class Cors {
+        /** 允许的跨域来源（Origin）；空列表=禁用 CORS。默认放行所有来源，生产建议按需收紧。 */
+        private List<String> allowedOrigins = new ArrayList<>(List.of("*"));
     }
 }
