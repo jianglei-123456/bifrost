@@ -28,5 +28,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
+        <!-- 标签解析：jaudiotagger 3.0.1（ADR-0002：文档 2.0.3 不存在于 Maven Central） -->
+        <dependency>
+            <groupId>net.jthink</groupId>
+            <artifactId>jaudiotagger</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <!-- 拼音索引：jpinyin（中文艺术家首字母分组） -->
+        <dependency>
+            <groupId>com.github.stuxuhai</groupId>
+            <artifactId>jpinyin</artifactId>
+            <version>1.1.8</version>
+        </dependency>
     </dependencies>
 </project>
