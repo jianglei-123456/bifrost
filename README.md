@@ -10,7 +10,7 @@
 - Spring Boot 3.5.x（Spring Framework 6.2.x）
 - Maven 多模块
 - 持久化：SQLite（Spring Data JPA + Hibernate SQLite dialect）
-- 标签解析：jaudiotagger（MP3/FLAC/M4A）
+- 标签解析：jaudiotagger 3.0.1（MP3/FLAC/M4A，ADR-0002）
 - 拼音索引：jpinyin（中文艺术家首字母分组）
 - Subsonic 输出：jackson-dataformat-xml（XML/JSON 双格式）
 
@@ -39,8 +39,8 @@ bifrost (父级 POM，统一 Spring Boot 与依赖版本)
 # 使用 Maven Wrapper 构建（首次会自动下载指定 Maven 版本）
 ./mvnw clean verify
 
-# 启动应用
-./mvnw -pl bifrost-bootstrap -am spring-boot:run
+# 启动应用（首次启动必须设置初始管理员密码，见《通用功能说明》§2.3）
+BIFROST_AUTH_INITIAL_PASSWORD=yourpass ./mvnw -pl bifrost-bootstrap -am spring-boot:run
 ```
 
 应用默认监听 `http://localhost:8080`：
@@ -52,10 +52,17 @@ curl "http://localhost:8080/rest/ping.view?u=admin&t=<token>&s=<salt>&v=1.16.1&c
 
 数据目录（SQLite 数据库、封面缓存）默认位于 `./data`，可通过配置与环境变量调整。
 
-## Docker 部署（规划，随 M1 实现落地）
+## 测试
 
 ```bash
-# 规划形态（实现时提供 docker/Dockerfile 与 docker/docker-compose.yml）
+./mvnw clean verify                        # 单元 + 集成测试
+powershell -File hurl\run.ps1              # hurl 端点契约测试（需 ffmpeg 与 hurl CLI，见 hurl\README.md）
+```
+
+## Docker 部署（延后，代码稳定后补充）
+
+```bash
+# 规划形态（M1 延期交付，见 doc/m1/task/07-延后项.md；代码稳定后提供 docker/Dockerfile 与 docker-compose.yml）
 BIFROST_AUTH_INITIAL_PASSWORD=yourpass docker compose up -d
 ```
 

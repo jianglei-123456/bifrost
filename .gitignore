@@ -39,4 +39,7 @@ logs/
 # 运行时数据目录（SQLite 数据库、封面缓存、密钥、日志）
 data/
 
+# hurl 契约测试运行产物（样本音乐）
+data-sample/
+
 .codegraph

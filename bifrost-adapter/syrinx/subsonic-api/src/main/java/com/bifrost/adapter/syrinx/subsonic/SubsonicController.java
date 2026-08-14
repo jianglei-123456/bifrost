@@ -466,8 +466,10 @@ public class SubsonicController {
         String filename = sanitizeFilename(track.getTitle()) + "." + track.getFormat();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(contentType(track.getFormat())));
+        // filename 用 ASCII 兜底，中文经 RFC 5987 filename* 传输（避免 Tomcat 丢弃非 ASCII 头值）
         headers.add(HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + urlEncode(filename));
+                "attachment; filename=\"track." + track.getFormat() + "\"; filename*=UTF-8''"
+                        + urlEncode(filename));
         headers.setContentLength(Files.size(file));
         return ResponseEntity.ok().headers(headers).body(new InputStreamResource(Files.newInputStream(file)));
     }
