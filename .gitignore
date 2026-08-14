@@ -35,3 +35,5 @@ logs/
 # Local env / secrets
 .env
 *.local.yml
+
+.codegraph
