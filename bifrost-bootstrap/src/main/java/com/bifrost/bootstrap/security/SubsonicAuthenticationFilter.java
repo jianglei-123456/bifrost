@@ -1,5 +1,6 @@
 package com.bifrost.bootstrap.security;
 
+import com.bifrost.adapter.syrinx.subsonic.SubsonicAuthAttributes;
 import com.bifrost.core.config.BifrostProperties;
 import com.bifrost.core.security.AuthenticationService;
 import com.bifrost.core.security.SubsonicTokenUtil;
@@ -28,9 +29,9 @@ import java.util.List;
 public class SubsonicAuthenticationFilter extends OncePerRequestFilter {
 
     /** 请求属性：认证用户名 */
-    public static final String ATTR_USERNAME = "bifrost.subsonic.username";
+    public static final String ATTR_USERNAME = SubsonicAuthAttributes.USERNAME;
     /** 请求属性：客户端名（c 参数，Q20 playerId） */
-    public static final String ATTR_CLIENT = "bifrost.subsonic.client";
+    public static final String ATTR_CLIENT = SubsonicAuthAttributes.CLIENT;
     /** 免认证端点 */
     private static final String OPEN_SUBSONIC_EXTENSIONS = "getOpenSubsonicExtensions.view";
 

@@ -107,7 +107,7 @@ class AuthIntegrationTest {
         String token = SubsonicTokenUtil.token(PASSWORD, salt);
         mockMvc.perform(get("/rest/ping.view")
                         .param("u", USERNAME).param("t", token).param("s", salt)
-                        .param("v", "1.16.1").param("c", "test"))
+                        .param("v", "1.16.1").param("c", "test").param("f", "json"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
     }
@@ -170,7 +170,7 @@ class AuthIntegrationTest {
 
     @Test
     void subsonicOpenSubsonicExtensionsExempt() throws Exception {
-        mockMvc.perform(get("/rest/getOpenSubsonicExtensions.view"))
+        mockMvc.perform(get("/rest/getOpenSubsonicExtensions.view").param("f", "json"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
     }

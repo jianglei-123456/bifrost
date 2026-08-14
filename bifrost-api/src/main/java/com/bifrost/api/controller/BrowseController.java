@@ -117,6 +117,11 @@ public class BrowseController {
         if (type == null || type.isBlank()) {
             return AlbumListType.ALPHABETICAL_BY_NAME;
         }
+        // 兼容协议 camelCase（alphabeticalByName）与枚举名两种写法
+        AlbumListType protocol = AlbumListType.fromProtocol(type);
+        if (protocol != null) {
+            return protocol;
+        }
         try {
             return AlbumListType.valueOf(type.trim().toUpperCase());
         } catch (IllegalArgumentException e) {

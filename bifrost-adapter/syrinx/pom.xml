@@ -10,7 +10,12 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>sonic-client</artifactId>
-    <name>sonic-client</name>
-    <description>向 Sonic 推送的适配器</description>
+    <artifactId>syrinx</artifactId>
+    <packaging>pom</packaging>
+    <name>syrinx</name>
+    <description>【音乐网关】聚合模块（Bifrost 自身即 Subsonic 服务端）</description>
+
+    <modules>
+        <module>subsonic-api</module>
+    </modules>
 </project>

@@ -197,4 +197,25 @@ public class CoverService {
             log.debug("封面缓存清理失败（忽略）: album={}", albumId, e);
         }
     }
+
+    /** 清除全部缩略图缓存（ScanCompletedEvent 订阅：封面可能已更新）。 */
+    public void invalidateAllThumbnails() {
+        try {
+            Path dir = coverCacheDir();
+            if (Files.isDirectory(dir)) {
+                try (var stream = Files.list(dir)) {
+                    stream.filter(p -> p.getFileName().toString().startsWith("al-"))
+                            .forEach(p -> {
+                                try {
+                                    Files.deleteIfExists(p);
+                                } catch (IOException ignored) {
+                                    // 忽略删除失败
+                                }
+                            });
+                }
+            }
+        } catch (IOException e) {
+            log.debug("封面缓存全量清理失败（忽略）", e);
+        }
+    }
 }

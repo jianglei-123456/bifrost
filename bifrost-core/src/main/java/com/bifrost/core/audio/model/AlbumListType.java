@@ -25,5 +25,30 @@ public enum AlbumListType {
     /** 按年份区间 */
     BY_YEAR,
     /** 按流派 */
-    BY_GENRE
+    BY_GENRE;
+
+    /**
+     * 按 Subsonic 协议 type 参数解析（camelCase，如 alphabeticalByName）。
+     *
+     * @return 枚举值；无法识别返回 null
+     */
+    public static AlbumListType fromProtocol(String type) {
+        if (type == null) {
+            return null;
+        }
+        String normalized = switch (type.trim().toLowerCase()) {
+            case "random" -> "RANDOM";
+            case "newest" -> "NEWEST";
+            case "highest" -> "HIGHEST";
+            case "frequent" -> "FREQUENT";
+            case "recent" -> "RECENT";
+            case "alphabeticalbyname" -> "ALPHABETICAL_BY_NAME";
+            case "alphabeticalbyartist" -> "ALPHABETICAL_BY_ARTIST";
+            case "starred" -> "STARRED";
+            case "byyear" -> "BY_YEAR";
+            case "bygenre" -> "BY_GENRE";
+            default -> null;
+        };
+        return normalized == null ? null : valueOf(normalized);
+    }
 }

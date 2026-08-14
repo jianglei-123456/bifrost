@@ -58,6 +58,16 @@
                 <artifactId>bifrost-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.bifrost</groupId>
+                <artifactId>syrinx</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bifrost</groupId>
+                <artifactId>subsonic-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

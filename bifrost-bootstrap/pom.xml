@@ -19,6 +19,11 @@
             <groupId>com.bifrost</groupId>
             <artifactId>bifrost-api</artifactId>
         </dependency>
+        <!-- Subsonic 协议服务端（Syrinx）：/rest/** 控制器由 bootstrap 跨模块扫描注册 -->
+        <dependency>
+            <groupId>com.bifrost</groupId>
+            <artifactId>subsonic-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>

@@ -16,13 +16,13 @@
     <description>【关键层】对接外部客户端的具体实现（聚合 POM）</description>
 
     <modules>
+        <module>syrinx</module>
         <module>jellyfin-client</module>
-        <module>sonic-client</module>
         <module>opds-publisher</module>
     </modules>
 
     <dependencies>
-        <!-- 三个适配器统一依赖核心业务层 -->
+        <!-- 适配器统一依赖核心业务层 -->
         <dependency>
             <groupId>com.bifrost</groupId>
             <artifactId>bifrost-core</artifactId>
