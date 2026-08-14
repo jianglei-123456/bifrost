@@ -13,7 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 阶段 01 验收测试：上下文可启动（含 SQLite 建库）且 /api/ping 可用。
  */
-@SpringBootTest(properties = {"bifrost.db.path=target/test-data/test.db"})
+@SpringBootTest(properties = {"bifrost.db.path=target/test-data/test.db",
+        "BIFROST_AUTH_INITIAL_PASSWORD=testpass"})
 @AutoConfigureMockMvc
 class BifrostApplicationTest {
 

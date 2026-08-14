@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 阶段 02 扫描集成测试：建库、聚合、幂等、变更/缺失检测、未知艺术家、标注/统计/歌单。
  */
-@SpringBootTest(properties = {"bifrost.db.path=target/test-data/scan-test.db"})
+@SpringBootTest(properties = {"bifrost.db.path=target/test-data/scan-test.db",
+        "BIFROST_AUTH_INITIAL_PASSWORD=testpass"})
 class ScanIntegrationTest {
 
     @Autowired
@@ -188,6 +189,7 @@ class ScanIntegrationTest {
         BizException ex = assertThrows(BizException.class, () -> scanService.scanRoot(root.getId()));
         assertEquals(1100, ex.getCode());
         release.countDown();
+        holder.join(5000); // 等待持锁线程释放锁，避免竞态
         // 解锁后恢复正常扫描
         ScanStats stats = scanService.scanRoot(root.getId());
         assertEquals(4, stats.added());
