@@ -65,7 +65,7 @@ public class LibraryQueryService {
 
     /** 专辑列表查询参数 */
     public record AlbumListQuery(AlbumListType type, int size, int offset, String genre,
-                                 Integer fromYear, Integer toYear, Long libraryRootId) {
+                                 Integer fromYear, Integer toYear, Long libraryRootId, Long artistId) {
     }
 
     private final ArtistRepository artistRepository;
@@ -230,6 +230,9 @@ public class LibraryQueryService {
             }
             if (q.genre() != null) {
                 predicates.add(cb.equal(root.get("genre"), q.genre()));
+            }
+            if (q.artistId() != null) {
+                predicates.add(cb.equal(root.get("artistId"), q.artistId()));
             }
             if (q.fromYear() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("year").as(Integer.class), q.fromYear()));
