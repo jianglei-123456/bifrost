@@ -19,5 +19,19 @@
             <groupId>com.bifrost</groupId>
             <artifactId>bifrost-common</artifactId>
         </dependency>
+        <!-- JPA 实体与 Spring Data Repository 接口（含 Hibernate 运行时），见《整体技术架构》§2 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- SQLite 驱动与方言（BOM 管理版本），见《音乐管理技术设计》§2.1 -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-community-dialects</artifactId>
+        </dependency>
     </dependencies>
 </project>

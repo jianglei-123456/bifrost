@@ -36,4 +36,7 @@ logs/
 .env
 *.local.yml
 
+# 运行时数据目录（SQLite 数据库、封面缓存、密钥、日志）
+data/
+
 .codegraph
