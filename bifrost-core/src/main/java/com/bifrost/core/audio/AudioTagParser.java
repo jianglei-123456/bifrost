@@ -73,6 +73,7 @@ public final class AudioTagParser {
             } catch (Exception e) {
                 log.debug("读取内嵌封面失败: {}", file, e);
             }
+            String lyrics = Strings.trimToNull(tag.getFirst(FieldKey.LYRICS));
 
             return new TagResult(
                     title != null ? title : FileIO.fileNameWithoutExtension(file),
@@ -87,6 +88,7 @@ public final class AudioTagParser {
                     bitrate,
                     sampleRate,
                     cover,
+                    lyrics,
                     false);
         } catch (Exception e) {
             log.warn("标签解析失败，使用文件名兜底: {} ({})", file, e.getMessage());

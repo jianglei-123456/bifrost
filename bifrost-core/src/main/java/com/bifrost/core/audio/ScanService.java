@@ -12,7 +12,10 @@ import com.bifrost.domain.entity.Artist;
 import com.bifrost.domain.entity.LibraryRoot;
 import com.bifrost.domain.entity.Track;
 import com.bifrost.domain.enums.ScanStatus;
+import com.bifrost.domain.repo.BookmarkRepository;
 import com.bifrost.domain.repo.LibraryRootRepository;
+import com.bifrost.domain.repo.PlayQueueEntryRepository;
+import com.bifrost.domain.repo.PlaylistEntryRepository;
 import com.bifrost.domain.repo.TrackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +53,9 @@ public class ScanService {
 
     private final LibraryRootRepository libraryRootRepository;
     private final TrackRepository trackRepository;
+    private final PlaylistEntryRepository playlistEntryRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final PlayQueueEntryRepository playQueueEntryRepository;
     private final AggregationService aggregationService;
     private final CoverService coverService;
     private final ApplicationEventPublisher eventPublisher;
@@ -58,15 +64,25 @@ public class ScanService {
 
     private final ReentrantLock globalLock = new ReentrantLock();
 
-    /** 扫描全部启用库根（串行）。 */
+    /** 扫描全部启用库根（串行，增量：指纹一致跳过）。 */
     public ScanStats scanAll() {
+        return scanAll(false);
+    }
+
+    /**
+     * 扫描全部启用库根（串行）。
+     *
+     * @param force true=强制全量重解析（忽略指纹跳过，重读全部标签——用于回填歌词等新字段/修正元数据）；
+     *              false=增量（仅解析新增/变更文件）
+     */
+    public ScanStats scanAll(boolean force) {
         List<LibraryRoot> roots = libraryRootRepository.findAllByOrderByIdAsc();
         int added = 0, updated = 0, missing = 0, error = 0;
         for (LibraryRoot root : roots) {
             if (!Boolean.TRUE.equals(root.getEnabled())) {
                 continue;
             }
-            ScanStats s = scanRoot(root.getId());
+            ScanStats s = scanRoot(root.getId(), force);
             added += s.added();
             updated += s.updated();
             missing += s.missing();
@@ -75,8 +91,13 @@ public class ScanService {
         return new ScanStats(added, updated, missing, error);
     }
 
-    /** 扫描单个库根；扫描进行中抛 {@link BizException}（1100）。 */
+    /** 扫描单个库根（增量）；扫描进行中抛 {@link BizException}（1100）。 */
     public ScanStats scanRoot(Long rootId) {
+        return scanRoot(rootId, false);
+    }
+
+    /** 扫描单个库根；force=true 全量重解析；扫描进行中抛 {@link BizException}（1100）。 */
+    public ScanStats scanRoot(Long rootId, boolean force) {
         if (!globalLock.tryLock()) {
             throw BizException.scanInProgress("扫描进行中");
         }
@@ -88,7 +109,7 @@ public class ScanService {
             }
             root.setScanStatus(ScanStatus.SCANNING);
             libraryRootRepository.save(root);
-            ScanStats stats = scanLibraryRoot(root);
+            ScanStats stats = scanLibraryRoot(root, force);
             root.setScanStatus(ScanStatus.IDLE);
             root.setLastScanAt(Instant.now());
             root.setLastScanStats(toJson(stats));
@@ -101,7 +122,7 @@ public class ScanService {
     }
 
     /** 单库根扫描主体。 */
-    private ScanStats scanLibraryRoot(LibraryRoot root) {
+    private ScanStats scanLibraryRoot(LibraryRoot root, boolean force) {
         Path dir = Path.of(root.getPath());
         if (!Files.isDirectory(dir)) {
             log.warn("库根目录不存在，跳过扫描: {}", root.getPath());
@@ -129,8 +150,9 @@ public class ScanService {
             String abs = file.toAbsolutePath().normalize().toString();
             Track existing = dbIndex.remove(abs);
             String fingerprint = Fingerprint.of(file);
-            if (existing != null && fingerprint.equals(existing.getFingerprint())) {
-                continue; // 指纹一致 → 跳过（不重解析标签）
+            if (!force && existing != null && Boolean.TRUE.equals(existing.getIsAvailable())
+                    && fingerprint.equals(existing.getFingerprint())) {
+                continue; // 增量且可用且指纹一致 → 跳过；隐藏记录或 force 全量重扫需重解析（复活/回填）
             }
             TagResult tag = AudioTagParser.parse(file);
             if (tag.parseError()) {
@@ -150,17 +172,24 @@ public class ScanService {
         }
         flush(tx, pending, affectedAlbums);
 
-        // 剩余记录 = 文件已消失 → 标记缺失（保留记录与歌单引用）
-        for (Track t : dbIndex.values()) {
-            if (Boolean.TRUE.equals(t.getIsAvailable())) {
-                t.setIsAvailable(false);
-                trackRepository.save(t);
-                counters.missing++;
+        // 剩余记录 = 文件已消失：增量 → 标记缺失（保留记录与歌单引用）；全量重扫 → 彻底移除
+        List<Track> remaining = new ArrayList<>(dbIndex.values());
+        tx.executeWithoutResult(status -> {
+            for (Track t : remaining) {
+                if (force) {
+                    purgeTrack(t, affectedAlbums, counters);
+                } else {
+                    if (Boolean.TRUE.equals(t.getIsAvailable())) {
+                        t.setIsAvailable(false);
+                        trackRepository.save(t);
+                        counters.missing++;
+                    }
+                    if (t.getAlbumId() != null) {
+                        affectedAlbums.add(t.getAlbumId());
+                    }
+                }
             }
-            if (t.getAlbumId() != null) {
-                affectedAlbums.add(t.getAlbumId());
-            }
-        }
+        });
 
         // 聚合刷新（仅本次涉及专辑）
         aggregationService.refreshAlbumAggregates(affectedAlbums);
@@ -168,6 +197,21 @@ public class ScanService {
         log.info("扫描完成: root={} added={} updated={} missing={} error={}",
                 root.getName(), counters.added, counters.updated, counters.missing, counters.error);
         return new ScanStats(counters.added, counters.updated, counters.missing, counters.error);
+    }
+
+    /**
+     * 全量重扫下彻底移除已消失曲目：连带清理歌单条目/书签/播放队列条目对该曲目的引用。
+     * 不可逆——仅当确认文件确实删除后再用 fullScan（外置盘临时离线时请勿触发）。
+     */
+    private void purgeTrack(Track t, Set<Long> affectedAlbums, Counters counters) {
+        if (t.getAlbumId() != null) {
+            affectedAlbums.add(t.getAlbumId());
+        }
+        playlistEntryRepository.deleteByTrackId(t.getId());
+        bookmarkRepository.deleteByTrackId(t.getId());
+        playQueueEntryRepository.deleteByTrackId(t.getId());
+        trackRepository.deleteById(t.getId()); // deleteById 内部自建事务加载托管实体再删（实体来自上一查询上下文，游离态不可 em.remove）
+        counters.missing++;
     }
 
     /** 批事务提交（200 文件/批，含聚合解析与封面处理）。 */
@@ -213,6 +257,7 @@ public class ScanService {
         t.setFileSize(FileIO.size(file));
         t.setFileLastModified(FileIO.lastModifiedMillis(file));
         t.setFingerprint(fingerprint);
+        t.setLyrics(tag.lyrics());
         t.setLibraryRootId(rootId);
         t.setIsAvailable(true);
     }

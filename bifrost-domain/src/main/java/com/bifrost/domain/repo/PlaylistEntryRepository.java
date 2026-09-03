@@ -22,4 +22,7 @@ public interface PlaylistEntryRepository extends JpaRepository<PlaylistEntry, Lo
 
     /** 删除整个歌单的条目（级联删除用） */
     void deleteByPlaylistId(Long playlistId);
+
+    /** 删除引用某曲目的条目（曲目被彻底移除时清理用） */
+    void deleteByTrackId(Long trackId);
 }

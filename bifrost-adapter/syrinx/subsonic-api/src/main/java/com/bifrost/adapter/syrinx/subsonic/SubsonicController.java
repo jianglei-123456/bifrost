@@ -11,7 +11,9 @@ import com.bifrost.common.exception.BizException;
 import com.bifrost.core.audio.ScanService;
 import com.bifrost.core.audio.model.AlbumListType;
 import com.bifrost.core.audio.service.AnnotationService;
+import com.bifrost.core.audio.service.BookmarkService;
 import com.bifrost.core.audio.service.NowPlayingService;
+import com.bifrost.core.audio.service.PlayQueueService;
 import com.bifrost.core.audio.service.PlaylistService;
 import com.bifrost.core.audio.service.ScrobbleService;
 import com.bifrost.core.audio.CoverService;
@@ -37,6 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,6 +73,8 @@ public class SubsonicController {
     private final PlaylistService playlistService;
     private final PlaylistEntryRepository playlistEntryRepository;
     private final AnnotationService annotationService;
+    private final BookmarkService bookmarkService;
+    private final PlayQueueService playQueueService;
     private final ScrobbleService scrobbleService;
     private final NowPlayingService nowPlayingService;
     private final CoverService coverService;
@@ -328,7 +333,8 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping({"/createPlaylist.view", "/createPlaylist"})
+    @RequestMapping(value = {"/createPlaylist.view", "/createPlaylist"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> createPlaylist(HttpServletRequest request,
                                                  @RequestParam(required = false) String playlistId,
                                                  @RequestParam(required = false) String name,
@@ -359,7 +365,8 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping({"/updatePlaylist.view", "/updatePlaylist"})
+    @RequestMapping(value = {"/updatePlaylist.view", "/updatePlaylist"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> updatePlaylist(HttpServletRequest request,
                                                  @RequestParam String playlistId,
                                                  @RequestParam(required = false) String name,
@@ -399,7 +406,8 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping({"/deletePlaylist.view", "/deletePlaylist"})
+    @RequestMapping(value = {"/deletePlaylist.view", "/deletePlaylist"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> deletePlaylist(HttpServletRequest request, @RequestParam String id) {
         Long pid = SubsonicIds.parsePlaylist(id);
         if (pid == null) {
@@ -429,7 +437,15 @@ public class SubsonicController {
         nowPlayingService.record(track.getId(), track.getTitle(), currentUsername(request),
                 currentClient(request), Instant.now());
 
-        long fileSize = Files.size(file);
+        long fileSize;
+        InputStream in;
+        try {
+            fileSize = Files.size(file);
+            in = Files.newInputStream(file); // 提前打开：IO 错误在响应头提交前暴露，可干净回 XML 70
+        } catch (IOException e) {
+            log.warn("stream 打开文件失败: {}", file);
+            return renderer.renderBinaryError(SubsonicResponse.failed(apiVersion(), 70, "Track not found"));
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.ACCEPT_RANGES, "bytes");
         headers.setContentType(MediaType.parseMediaType(contentType(track.getFormat())));
@@ -443,24 +459,32 @@ public class SubsonicController {
             long length = r[1] - r[0] + 1;
             headers.add(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + r[1] + "/" + fileSize);
             headers.setContentLength(length);
-            InputStream in = Files.newInputStream(file);
             in.skipNBytes(start);
             return ResponseEntity.status(206).headers(headers)
                     .body(new InputStreamResource(new LimitedInputStream(in, length)));
         }
         headers.setContentLength(fileSize);
         return ResponseEntity.ok().headers(headers)
-                .body(new InputStreamResource(Files.newInputStream(file)));
+                .body(new InputStreamResource(in));
     }
 
     @GetMapping({"/download.view", "/download"})
-    public ResponseEntity<?> download(@RequestParam String id) throws IOException {
+    public ResponseEntity<?> download(@RequestParam String id) {
         Track track = resolveAvailableTrack(id);
         if (track == null) {
             return renderer.renderBinaryError(SubsonicResponse.failed(apiVersion(), 70, "Track not found"));
         }
         Path file = Path.of(track.getFilePath());
         if (!Files.isRegularFile(file)) {
+            return renderer.renderBinaryError(SubsonicResponse.failed(apiVersion(), 70, "Track not found"));
+        }
+        InputStream in;
+        long fileSize;
+        try {
+            fileSize = Files.size(file);
+            in = Files.newInputStream(file); // 提前打开：IO 错误在响应头提交前暴露
+        } catch (IOException e) {
+            log.warn("download 打开文件失败: {}", file);
             return renderer.renderBinaryError(SubsonicResponse.failed(apiVersion(), 70, "Track not found"));
         }
         String filename = sanitizeFilename(track.getTitle()) + "." + track.getFormat();
@@ -470,8 +494,8 @@ public class SubsonicController {
         headers.add(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"track." + track.getFormat() + "\"; filename*=UTF-8''"
                         + urlEncode(filename));
-        headers.setContentLength(Files.size(file));
-        return ResponseEntity.ok().headers(headers).body(new InputStreamResource(Files.newInputStream(file)));
+        headers.setContentLength(fileSize);
+        return ResponseEntity.ok().headers(headers).body(new InputStreamResource(in));
     }
 
     @GetMapping({"/getCoverArt.view", "/getCoverArt"})
@@ -487,7 +511,8 @@ public class SubsonicController {
 
     // ================= Annotation =================
 
-    @GetMapping({"/star.view", "/star"})
+    @RequestMapping(value = {"/star.view", "/star"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> star(HttpServletRequest request,
                                        @RequestParam(required = false) List<String> id,
                                        @RequestParam(required = false) List<String> albumId,
@@ -496,7 +521,8 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping({"/unstar.view", "/unstar"})
+    @RequestMapping(value = {"/unstar.view", "/unstar"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> unstar(HttpServletRequest request,
                                          @RequestParam(required = false) List<String> id,
                                          @RequestParam(required = false) List<String> albumId,
@@ -539,7 +565,8 @@ public class SubsonicController {
         }
     }
 
-    @GetMapping({"/setRating.view", "/setRating"})
+    @RequestMapping(value = {"/setRating.view", "/setRating"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> setRating(HttpServletRequest request,
                                             @RequestParam String id,
                                             @RequestParam int rating) {
@@ -551,7 +578,8 @@ public class SubsonicController {
         return renderer.render(request, ok(request));
     }
 
-    @GetMapping({"/scrobble.view", "/scrobble"})
+    @RequestMapping(value = {"/scrobble.view", "/scrobble"},
+            method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<String> scrobble(HttpServletRequest request,
                                            @RequestParam String id,
                                            @RequestParam(required = false) Long time,
@@ -573,12 +601,15 @@ public class SubsonicController {
         return renderer.render(request, response);
     }
 
-    @GetMapping({"/startScan.view", "/startScan"})
-    public ResponseEntity<String> startScan(HttpServletRequest request) {
-        // 后台触发，立即返回状态（Q 决策：扫描后台执行）
+    @RequestMapping(value = {"/startScan.view", "/startScan"},
+            method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<String> startScan(HttpServletRequest request,
+                                            @RequestParam(defaultValue = "false") boolean fullScan) {
+        // 后台触发，立即返回状态（Q 决策：扫描后台执行）；fullScan=true 强制全量重解析（回填歌词等）
+        final boolean force = fullScan;
         CompletableFuture.runAsync(() -> {
             try {
-                scanService.scanAll();
+                scanService.scanAll(force);
             } catch (Exception e) {
                 log.warn("startScan 后台扫描失败", e);
             }
@@ -601,6 +632,112 @@ public class SubsonicController {
     public ResponseEntity<String> getUsers(HttpServletRequest request) {
         SubsonicResponse response = ok(request);
         response.setUsers(assembler.buildUsers(currentUsername(request))); // Q19：单用户返回当前用户
+        return renderer.render(request, response);
+    }
+
+    // ================= Bookmarks / Play Queue（§4.14，Q 增补） =================
+
+    @GetMapping({"/getBookmarks.view", "/getBookmarks"})
+    public ResponseEntity<String> getBookmarks(HttpServletRequest request) {
+        SubsonicResponse response = ok(request);
+        response.setBookmarks(assembler.buildBookmarks(
+                bookmarkService.listByUser(currentUser().getId()), currentUsername(request)));
+        return renderer.render(request, response);
+    }
+
+    @RequestMapping(value = {"/createBookmark.view", "/createBookmark"},
+            method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<String> createBookmark(HttpServletRequest request,
+                                                 @RequestParam(required = false) String id,
+                                                 @RequestParam(required = false) Long position,
+                                                 @RequestParam(required = false) String comment) {
+        if (id == null) {
+            return error(request, 10, "id is required");
+        }
+        Long trackId = SubsonicIds.parseTrack(id);
+        if (!isAvailableTrack(trackId)) {
+            return error(request, 70, "Song not found");
+        }
+        if (position == null) {
+            return error(request, 10, "position is required");
+        }
+        bookmarkService.save(currentUser().getId(), trackId, position, comment);
+        return renderer.render(request, ok(request));
+    }
+
+    @RequestMapping(value = {"/deleteBookmark.view", "/deleteBookmark"},
+            method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<String> deleteBookmark(HttpServletRequest request,
+                                                 @RequestParam(required = false) String id) {
+        if (id == null) {
+            return error(request, 10, "id is required");
+        }
+        Long trackId = SubsonicIds.parseTrack(id);
+        if (trackId == null) {
+            return error(request, 70, "Song not found");
+        }
+        bookmarkService.delete(currentUser().getId(), trackId); // 不存在幂等 ok
+        return renderer.render(request, ok(request));
+    }
+
+    @GetMapping({"/getPlayQueue.view", "/getPlayQueue"})
+    public ResponseEntity<String> getPlayQueue(HttpServletRequest request) {
+        SubsonicResponse response = ok(request);
+        var view = playQueueService.get(currentUser().getId()).orElse(null);
+        response.setPlayQueue(assembler.buildPlayQueue(
+                view == null ? null : view.queue(),
+                view == null ? List.of() : view.entries(),
+                currentUsername(request)));
+        return renderer.render(request, response);
+    }
+
+    @RequestMapping(value = {"/savePlayQueue.view", "/savePlayQueue"},
+            method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<String> savePlayQueue(HttpServletRequest request,
+                                                @RequestParam(required = false) List<String> id,
+                                                @RequestParam(required = false) String current,
+                                                @RequestParam(required = false) Long position) {
+        List<Long> trackIds = new ArrayList<>();
+        if (id != null) {
+            for (String song : id) {
+                Long trackId = SubsonicIds.parseTrack(song);
+                if (isAvailableTrack(trackId)) {
+                    trackIds.add(trackId);
+                }
+            }
+        }
+        Long currentTrackId = null;
+        if (current != null && !current.isBlank()) {
+            Long parsed = SubsonicIds.parseTrack(current);
+            currentTrackId = isAvailableTrack(parsed) ? parsed : null; // 当前曲目失效则忽略
+        }
+        playQueueService.save(currentUser().getId(), trackIds, currentTrackId, position);
+        return renderer.render(request, ok(request));
+    }
+
+    // ================= Lyrics（歌词：getLyrics / getLyricsBySongId） =================
+
+    @GetMapping({"/getLyrics.view", "/getLyrics"})
+    public ResponseEntity<String> getLyrics(HttpServletRequest request,
+                                            @RequestParam(required = false) String artist,
+                                            @RequestParam(required = false) String title) {
+        if ((artist == null || artist.isBlank()) && (title == null || title.isBlank())) {
+            return error(request, 10, "artist or title is required");
+        }
+        SubsonicResponse response = ok(request);
+        response.setLyrics(assembler.buildLyrics(artist, title)); // 未命中返回空歌词（ok）
+        return renderer.render(request, response);
+    }
+
+    @GetMapping({"/getLyricsBySongId.view", "/getLyricsBySongId"})
+    public ResponseEntity<String> getLyricsBySongId(HttpServletRequest request,
+                                                    @RequestParam(required = false) String id) {
+        Track track = id == null ? null : resolveAvailableTrack(id);
+        if (track == null) {
+            return error(request, 70, "Song not found");
+        }
+        SubsonicResponse response = ok(request);
+        response.setLyricsList(assembler.buildLyricsList(track)); // 无歌词 → 空 lyricsList
         return renderer.render(request, response);
     }
 
@@ -656,6 +793,12 @@ public class SubsonicController {
         }
         Track track = trackRepository.findById(trackId).orElse(null);
         return track != null && Boolean.TRUE.equals(track.getIsAvailable()) ? track : null;
+    }
+
+    /** 曲目是否存在且可用（null 安全）。 */
+    private boolean isAvailableTrack(Long trackId) {
+        return trackId != null && trackRepository.findById(trackId)
+                .map(t -> Boolean.TRUE.equals(t.getIsAvailable())).orElse(false);
     }
 
     private AlbumListType parseListType(HttpServletRequest request, String type) {

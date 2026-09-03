@@ -6,7 +6,10 @@ import com.bifrost.core.security.SubsonicTokenUtil;
 import com.bifrost.domain.entity.LibraryRoot;
 import com.bifrost.domain.repo.AlbumRepository;
 import com.bifrost.domain.repo.ArtistRepository;
+import com.bifrost.domain.repo.BookmarkRepository;
 import com.bifrost.domain.repo.LibraryRootRepository;
+import com.bifrost.domain.repo.PlayQueueEntryRepository;
+import com.bifrost.domain.repo.PlayQueueRepository;
 import com.bifrost.domain.repo.PlaylistEntryRepository;
 import com.bifrost.domain.repo.PlaylistRepository;
 import com.bifrost.domain.repo.TrackRepository;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -32,15 +36,17 @@ import java.time.Instant;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 阶段 05 Subsonic 服务（Syrinx）集成测试：浏览/目录树/列表/搜索/歌单/标注/流媒体/封面/扫描/用户。
+ * 阶段 05 Subsonic 服务（Syrinx）集成测试：浏览/目录树/列表/搜索/歌单/标注/流媒体/封面/扫描/用户/书签/播放队列。
  */
 @SpringBootTest(properties = {
         "bifrost.db.path=target/test-data/subsonic-test.db",
@@ -70,6 +76,12 @@ class SubsonicIntegrationTest {
     @Autowired
     private PlaylistEntryRepository playlistEntryRepository;
     @Autowired
+    private BookmarkRepository bookmarkRepository;
+    @Autowired
+    private PlayQueueRepository playQueueRepository;
+    @Autowired
+    private PlayQueueEntryRepository playQueueEntryRepository;
+    @Autowired
     private UserRepository userRepository;
     @Autowired
     private PasswordCipher passwordCipher;
@@ -83,6 +95,9 @@ class SubsonicIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        bookmarkRepository.deleteAll();
+        playQueueEntryRepository.deleteAll();
+        playQueueRepository.deleteAll();
         playlistEntryRepository.deleteAll();
         playlistRepository.deleteAll();
         trackRepository.deleteAll();
@@ -229,6 +244,42 @@ class SubsonicIntegrationTest {
                 .andExpect(jsonPath("$.subsonic-response.playlists.playlist", hasSize(0)));
     }
 
+    /** 写端点接受 POST 表单（OpenSubsonic formPost / DSub 系客户端行为）。 */
+    @Test
+    void writeEndpointsAcceptPostForm() throws Exception {
+        String trackId = firstTrackId();
+        String auth = "u=" + USERNAME + "&t=" + TOKEN + "&s=" + SALT + "&v=1.16.1&c=test&f=json";
+        // POST createPlaylist（此前只有 GET，POST 会误落入兜底 error 0 → 表现为"未实现"）
+        MvcResult created = mockMvc.perform(post("/rest/createPlaylist.view")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(auth + "&name=POSTList&songId=" + trackId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.playlist.name").value("POSTList"))
+                .andReturn();
+        String playlistId = objectMapper.readTree(created.getResponse().getContentAsString())
+                .at("/subsonic-response/playlist/id").asText();
+        // POST deletePlaylist
+        mockMvc.perform(post("/rest/deletePlaylist.view")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(auth + "&id=" + playlistId))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        // POST createBookmark / deleteBookmark
+        mockMvc.perform(post("/rest/createBookmark.view")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(auth + "&id=" + trackId + "&position=77"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(post("/rest/deleteBookmark.view")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(auth + "&id=" + trackId))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        // 未实现端点 POST 仍由兜底返回 error 0（不回退成 404）
+        mockMvc.perform(post("/rest/getGenres.view")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(auth))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(0));
+    }
+
     @Test
     void annotationAndScrobble() throws Exception {
         String trackId = firstTrackId();
@@ -328,6 +379,228 @@ class SubsonicIntegrationTest {
         mockMvc.perform(base("/rest/getNowPlaying.view"))
                 .andExpect(jsonPath("$.subsonic-response.nowPlaying.entry[0].username").value(USERNAME))
                 .andExpect(jsonPath("$.subsonic-response.nowPlaying.entry[0].playerId").value("test"));
+    }
+
+    @Test
+    void bookmarkLifecycle() throws Exception {
+        String track1 = songIdInAlbum(albumIdByName("叶惠美"), 0);
+        String track2 = songIdInAlbum(albumIdByName("叶惠美"), 1);
+        // 初始为空
+        mockMvc.perform(base("/rest/getBookmarks.view"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark", hasSize(0)));
+        // 创建（缺 position → error 10；缺 id → error 10）
+        mockMvc.perform(base("/rest/createBookmark.view").param("id", track1))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(10));
+        mockMvc.perform(base("/rest/createBookmark.view").param("position", "1"))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(10));
+        // 非法曲目 → error 70
+        mockMvc.perform(base("/rest/createBookmark.view").param("id", "tr-999999").param("position", "1"))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(70));
+        mockMvc.perform(base("/rest/createBookmark.view")
+                        .param("id", track1).param("position", "123").param("comment", "开场"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        // upsert：同曲目重复提交 → 更新（仍是 1 条）
+        mockMvc.perform(base("/rest/createBookmark.view")
+                        .param("id", track1).param("position", "456").param("comment", "副歌"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getBookmarks.view"))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark", hasSize(1)))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].position").value(456))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].username").value(USERNAME))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].comment").value("副歌"))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].entry.id").value(track1))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].created").isNotEmpty())
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].changed").isNotEmpty());
+        // 第二曲目书签并存
+        mockMvc.perform(base("/rest/createBookmark.view").param("id", track2).param("position", "9"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getBookmarks.view"))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark", hasSize(2)));
+        // 删除一个 → 剩一个；再删不存在幂等 ok
+        mockMvc.perform(base("/rest/deleteBookmark.view").param("id", track1))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/deleteBookmark.view").param("id", track1))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getBookmarks.view"))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark", hasSize(1)))
+                .andExpect(jsonPath("$.subsonic-response.bookmarks.bookmark[0].entry.id").value(track2));
+    }
+
+    @Test
+    void playQueueLifecycle() throws Exception {
+        String track1 = songIdInAlbum(albumIdByName("叶惠美"), 0);
+        String track2 = songIdInAlbum(albumIdByName("叶惠美"), 1);
+        // 初始空队列：ok + 空 entry
+        mockMvc.perform(base("/rest/getPlayQueue.view"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry", hasSize(0)));
+        // 保存（id 顺序即队列顺序）
+        mockMvc.perform(base("/rest/savePlayQueue.view")
+                        .param("id", track1).param("id", track2)
+                        .param("current", track2).param("position", "42"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getPlayQueue.view"))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry", hasSize(2)))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry[0].id").value(track1))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry[1].id").value(track2))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.current").value(track2))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.position").value(42))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.username").value(USERNAME))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.changed").isNotEmpty());
+        // 全量覆盖：只保留 track2
+        mockMvc.perform(base("/rest/savePlayQueue.view").param("id", track2))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getPlayQueue.view"))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry", hasSize(1)))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry[0].id").value(track2));
+        // 空 id = 清空队列
+        mockMvc.perform(base("/rest/savePlayQueue.view"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"));
+        mockMvc.perform(base("/rest/getPlayQueue.view"))
+                .andExpect(jsonPath("$.subsonic-response.playQueue.entry", hasSize(0)));
+    }
+
+    @Test
+    void bookmarksXmlFormat() throws Exception {
+        String trackId = songIdInAlbum(albumIdByName("叶惠美"), 0);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                                "/rest/createBookmark.view")
+                        .param("u", USERNAME).param("t", TOKEN).param("s", SALT)
+                        .param("v", "1.16.1").param("c", "test")
+                        .param("id", trackId).param("position", "321").param("comment", "highlight"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<subsonic-response")));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/rest/getBookmarks.view")
+                        .param("u", USERNAME).param("t", TOKEN).param("s", SALT)
+                        .param("v", "1.16.1").param("c", "test"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<bookmarks")))
+                .andExpect(content().string(containsString("position=\"321\"")))
+                .andExpect(content().string(containsString("comment=\"highlight\"")))
+                .andExpect(content().string(containsString("<entry id=\"tr-")))
+                .andExpect(content().string(containsString("username=\"" + USERNAME + "\"")));
+    }
+
+    /** stream 返回真实音频字节（不只响应头）：修复"无法播放/只写响应头"类回归。 */
+    @Test
+    void streamReturnsAudioBytes() throws Exception {
+        String mp3Id = songIdInAlbum(albumIdByName("叶惠美"), 0);
+        mockMvc.perform(base("/rest/stream.view").param("id", mp3Id))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("audio/mpeg")))
+                .andExpect(result -> {
+                    byte[] body = result.getResponse().getContentAsByteArray();
+                    assertTrue(body.length > 0, "mp3 stream 未返回任何字节");
+                    String len = result.getResponse().getHeader("Content-Length");
+                    if (len != null) {
+                        assertEquals(Long.parseLong(len), body.length);
+                    }
+                });
+        String flacId = songIdInAlbum(albumIdByName("Let It Be"), 0);
+        mockMvc.perform(base("/rest/stream.view").param("id", flacId))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("audio/flac")))
+                .andExpect(result -> assertTrue(
+                        result.getResponse().getContentAsByteArray().length > 0, "flac stream 未返回任何字节"));
+        // Range 206 精确返回请求区间字节
+        mockMvc.perform(base("/rest/stream.view").param("id", mp3Id)
+                        .header("Range", "bytes=100-199"))
+                .andExpect(status().isPartialContent())
+                .andExpect(result -> {
+                    assertEquals(100, result.getResponse().getContentAsByteArray().length);
+                    assertEquals("100", result.getResponse().getHeader("Content-Length"));
+                });
+    }
+
+    /** 参数缺失等端点异常回 Subsonic 协议错误（10），而非管理端 ApiResponse/HTML 500。 */
+    @Test
+    void endpointExceptionReturnsProtocolError() throws Exception {
+        mockMvc.perform(base("/rest/getSong"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.status").value("failed"))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(10));
+        mockMvc.perform(base("/rest/getSong").param("id", "not-a-track"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(70));
+    }
+
+    /** 歌词：内嵌歌词 → getLyrics(getLyricsBySongId)，同步/非同步/缺失三态。 */
+    @Test
+    void lyricsEndpoints() throws Exception {
+        // 注入：一首纯文本（非同步），一首 LRC（同步），一首无歌词（Let It Be）
+        String plain = songIdInAlbum(albumIdByName("叶惠美"), 0); // 以父之名
+        String syncedId = songIdInAlbum(albumIdByName("叶惠美"), 1); // 东风破
+        for (com.bifrost.domain.entity.Track t : trackRepository.findAll()) {
+            if ("以父之名".equals(t.getTitle())) {
+                t.setLyrics("第一句\n第二句\n第三句");
+            } else if ("东风破".equals(t.getTitle())) {
+                t.setLyrics("[00:01.00]谁在用琵琶弹奏 一曲东风破\n[00:08.50]岁月在墙上剥落 看见小时候");
+            }
+            trackRepository.save(t);
+        }
+        // 非同步
+        mockMvc.perform(base("/rest/getLyricsBySongId.view").param("id", plain))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics", hasSize(1)))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].synced").value(false))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].line", hasSize(3)))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].line[0].value").value("第一句"))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].displayTitle").value("以父之名"));
+        // 同步（LRC 时间戳 → ms）
+        mockMvc.perform(base("/rest/getLyricsBySongId.view").param("id", syncedId))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].synced").value(true))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].line[0].start").value(1000))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].line[0].value")
+                        .value("谁在用琵琶弹奏 一曲东风破"))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics[0].line[1].start").value(8500));
+        // 无歌词 → 空列表（ok）
+        String noLyricsId = songIdInAlbum(albumIdByName("Let It Be"), 0);
+        mockMvc.perform(base("/rest/getLyricsBySongId.view").param("id", noLyricsId))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.lyricsList.structuredLyrics", hasSize(0)));
+        // 老协议 getLyrics：按 歌手+歌名 匹配
+        mockMvc.perform(base("/rest/getLyrics.view").param("artist", "周杰伦").param("title", "东风破"))
+                .andExpect(jsonPath("$.subsonic-response.status").value("ok"))
+                .andExpect(jsonPath("$.subsonic-response.lyrics.artist").value("周杰伦"))
+                .andExpect(jsonPath("$.subsonic-response.lyrics.title").value("东风破"))
+                .andExpect(jsonPath("$.subsonic-response.lyrics.value", containsString("一曲东风破")));
+        // 参数/曲目错误
+        mockMvc.perform(base("/rest/getLyrics.view"))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(10));
+        mockMvc.perform(base("/rest/getLyricsBySongId.view").param("id", "tr-999999"))
+                .andExpect(jsonPath("$.subsonic-response.error.code").value(70));
+        // 扩展通告：声明 songLyrics（OS 版本号为整数 1/2；仅实现 Version 1）
+        mockMvc.perform(base("/rest/getOpenSubsonicExtensions.view"))
+                .andExpect(jsonPath("$.subsonic-response.openSubsonicExtensions.openSubsonicExtension"
+                        + "[?(@.name=='songLyrics')].versions").value("1"));
+    }
+
+    @Test
+    void lyricsXmlFormat() throws Exception {
+        for (com.bifrost.domain.entity.Track t : trackRepository.findAll()) {
+            if ("东风破".equals(t.getTitle())) {
+                t.setLyrics("[00:01.00]谁在用琵琶弹奏 一曲东风破\n[00:08.50]岁月在墙上剥落 看见小时候");
+                trackRepository.save(t);
+            }
+        }
+        String id = songIdInAlbum(albumIdByName("叶惠美"), 1);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                                "/rest/getLyricsBySongId.view")
+                        .param("u", USERNAME).param("t", TOKEN).param("s", SALT)
+                        .param("v", "1.16.1").param("c", "test").param("id", id))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<lyricsList")))
+                .andExpect(content().string(containsString("<structuredLyrics ")))
+                .andExpect(content().string(containsString("synced=\"true\"")))
+                .andExpect(content().string(containsString("<line start=\"1000\">")));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/rest/getLyrics.view")
+                        .param("u", USERNAME).param("t", TOKEN).param("s", SALT)
+                        .param("v", "1.16.1").param("c", "test")
+                        .param("artist", "周杰伦").param("title", "东风破"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<lyrics ")))
+                .andExpect(content().string(containsString("<lyric>")));
     }
 
     // ---------- 工具 ----------

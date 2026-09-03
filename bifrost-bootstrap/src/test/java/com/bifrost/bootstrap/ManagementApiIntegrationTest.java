@@ -83,6 +83,29 @@ class ManagementApiIntegrationTest {
     }
 
     @Test
+    void fullScanParamForcesReParse() throws Exception {
+        String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
+        mockMvc.perform(post("/api/library-roots")
+                        .header("Authorization", BASIC).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"测试库\",\"path\":\"" + rootPath + "\",\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+        Long rootId = rootIdFromList();
+        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan").header("Authorization", BASIC))
+                .andExpect(jsonPath("$.data.added").value(4));
+        // 增量幂等
+        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan").header("Authorization", BASIC))
+                .andExpect(jsonPath("$.data.added").value(0))
+                .andExpect(jsonPath("$.data.updated").value(0));
+        // fullScan=true → 强制全量重解析（指纹一致也重读标签）
+        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan")
+                        .param("fullScan", "true").header("Authorization", BASIC))
+                .andExpect(jsonPath("$.data.added").value(0))
+                .andExpect(jsonPath("$.data.updated").value(4))
+                .andExpect(jsonPath("$.data.missing").value(0));
+    }
+
+    @Test
     void libraryRootCrudScanAndBrowse() throws Exception {
         String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
         // 新增

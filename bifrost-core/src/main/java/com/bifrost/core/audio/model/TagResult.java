@@ -18,6 +18,7 @@ package com.bifrost.core.audio.model;
  * @param bitrate        码率 kbps（可空）
  * @param sampleRate     采样率 Hz（可空）
  * @param embeddedCover  内嵌封面图原始字节（可空）
+ * @param lyrics         内嵌歌词原文（USLT/©lyr/Vorbis LYRICS，含换行；可空）
  * @param parseError     是否解析失败（仅文件名兜底）
  */
 public record TagResult(
@@ -33,10 +34,11 @@ public record TagResult(
         Integer bitrate,
         Integer sampleRate,
         byte[] embeddedCover,
+        String lyrics,
         boolean parseError) {
 
     /** 解析失败的兜底结果：仅文件名标题，其余为空。 */
     public static TagResult fallback(String fileNameWithoutExtension) {
-        return new TagResult(fileNameWithoutExtension, 1, 1, null, null, null, null, null, null, null, null, null, true);
+        return new TagResult(fileNameWithoutExtension, 1, 1, null, null, null, null, null, null, null, null, null, null, true);
     }
 }

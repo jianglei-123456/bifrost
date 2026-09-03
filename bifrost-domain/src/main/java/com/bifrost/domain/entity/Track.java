@@ -87,6 +87,10 @@ public class Track extends BaseEntity {
     @Column(nullable = false)
     private Integer playCount = 0;
 
+    /** 内嵌歌词（USLT/©lyr/Vorbis LYRICS 原文，含换行；null=无） */
+    @Column(length = 65535)
+    private String lyrics;
+
     /** 最后播放时间 */
     private Instant lastPlayed;
 

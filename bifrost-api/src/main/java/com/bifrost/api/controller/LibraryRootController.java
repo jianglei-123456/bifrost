@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -102,16 +103,17 @@ public class LibraryRootController {
         return ApiResponse.ok();
     }
 
-    /** 触发单根扫描（扫描进行中 → 1100） */
+    /** 触发单根扫描（扫描进行中 → 1100）；fullScan=true 强制全量重解析（回填歌词等标签字段） */
     @PostMapping("/library-roots/{id}/scan")
-    public ApiResponse<ScanStats> scanRoot(@PathVariable Long id) {
-        return ApiResponse.ok(scanService.scanRoot(id));
+    public ApiResponse<ScanStats> scanRoot(@PathVariable Long id,
+                                           @RequestParam(defaultValue = "false") boolean fullScan) {
+        return ApiResponse.ok(scanService.scanRoot(id, fullScan));
     }
 
-    /** 触发全量扫描（全部启用库根，串行） */
+    /** 触发全量扫描（全部启用库根，串行）；fullScan=true 强制全量重解析 */
     @PostMapping("/scan")
-    public ApiResponse<ScanStats> scanAll() {
-        return ApiResponse.ok(scanService.scanAll());
+    public ApiResponse<ScanStats> scanAll(@RequestParam(defaultValue = "false") boolean fullScan) {
+        return ApiResponse.ok(scanService.scanAll(fullScan));
     }
 
     /** 扫描状态 */

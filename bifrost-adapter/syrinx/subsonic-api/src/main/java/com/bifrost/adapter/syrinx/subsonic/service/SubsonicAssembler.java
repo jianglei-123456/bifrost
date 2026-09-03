@@ -6,12 +6,16 @@ import com.bifrost.adapter.syrinx.subsonic.dto.AlbumList;
 import com.bifrost.adapter.syrinx.subsonic.dto.AlbumList2;
 import com.bifrost.adapter.syrinx.subsonic.dto.ArtistID3;
 import com.bifrost.adapter.syrinx.subsonic.dto.Artists;
+import com.bifrost.adapter.syrinx.subsonic.dto.Bookmarks;
 import com.bifrost.adapter.syrinx.subsonic.dto.Child;
 import com.bifrost.adapter.syrinx.subsonic.dto.Directory;
 import com.bifrost.adapter.syrinx.subsonic.dto.Indexes;
+import com.bifrost.adapter.syrinx.subsonic.dto.Lyrics;
+import com.bifrost.adapter.syrinx.subsonic.dto.LyricsList;
 import com.bifrost.adapter.syrinx.subsonic.dto.MusicFolders;
 import com.bifrost.adapter.syrinx.subsonic.dto.NowPlaying;
 import com.bifrost.adapter.syrinx.subsonic.dto.OpenSubsonicExtensions;
+import com.bifrost.adapter.syrinx.subsonic.dto.PlayQueue;
 import com.bifrost.adapter.syrinx.subsonic.dto.Playlist;
 import com.bifrost.adapter.syrinx.subsonic.dto.Playlists;
 import com.bifrost.adapter.syrinx.subsonic.dto.RandomSongs;
@@ -569,6 +573,187 @@ public class SubsonicAssembler {
         ref.setDuration(duration);
     }
 
+    // ---------- 书签 / 播放队列 ----------
+
+    /** 用户书签列表（getBookmarks）；曲目失效的书签不出现在响应。 */
+    public Bookmarks buildBookmarks(List<com.bifrost.domain.entity.Bookmark> bookmarks, String username) {
+        Bookmarks dto = new Bookmarks();
+        List<Bookmarks.Bookmark> items = new ArrayList<>();
+        for (var b : bookmarks) {
+            Track t = trackRepository.findById(b.getTrackId()).orElse(null);
+            if (t == null || !Boolean.TRUE.equals(t.getIsAvailable())) {
+                continue; // 曲目缺失则书签隐藏（记录保留）
+            }
+            Bookmarks.Bookmark item = new Bookmarks.Bookmark();
+            item.setPosition(b.getPosition());
+            item.setUsername(username);
+            item.setComment(b.getComment());
+            item.setCreated(Dates.formatIso(b.getCreatedAt()));
+            item.setChanged(Dates.formatIso(b.getUpdatedAt()));
+            item.setEntry(buildSong(t, albumRepository.findById(t.getAlbumId()).orElse(null)));
+            items.add(item);
+        }
+        dto.setBookmark(items);
+        return dto;
+    }
+
+    /** 播放队列（getPlayQueue）；无队列时返回空 playQueue（username 外无可回显）。 */
+    public PlayQueue buildPlayQueue(com.bifrost.domain.entity.PlayQueue queue,
+                                    List<com.bifrost.domain.entity.PlayQueueEntry> entries,
+                                    String username) {
+        PlayQueue dto = new PlayQueue();
+        dto.setUsername(username);
+        if (queue != null) {
+            dto.setPosition(queue.getPosition());
+            dto.setChanged(Dates.formatIso(queue.getUpdatedAt()));
+            if (queue.getCurrentTrackId() != null) {
+                Track current = trackRepository.findById(queue.getCurrentTrackId()).orElse(null);
+                if (current != null && Boolean.TRUE.equals(current.getIsAvailable())) {
+                    dto.setCurrent(SubsonicIds.track(current.getId()));
+                }
+            }
+        }
+        List<Child> children = new ArrayList<>();
+        for (var e : entries == null ? List.<com.bifrost.domain.entity.PlayQueueEntry>of() : entries) {
+            Track t = trackRepository.findById(e.getTrackId()).orElse(null);
+            if (t != null && Boolean.TRUE.equals(t.getIsAvailable())) {
+                children.add(buildSong(t, albumRepository.findById(t.getAlbumId()).orElse(null)));
+            }
+        }
+        dto.setEntry(children);
+        return dto;
+    }
+
+    // ---------- 歌词（getLyrics / getLyricsBySongId） ----------
+
+    /**
+     * 老协议 getLyrics：按 歌手/歌名 大小写不敏感匹配有歌词的曲目。
+     * 未命中返回空歌词（status=ok，协议允许），命中返回曲目歌手/歌名与歌词原文。
+     */
+    public Lyrics buildLyrics(String artist, String title) {
+        Lyrics dto = new Lyrics();
+        dto.setArtist(artist);
+        dto.setTitle(title);
+        for (Track t : trackRepository.findAll()) {
+            if (!Boolean.TRUE.equals(t.getIsAvailable())
+                    || t.getLyrics() == null || t.getLyrics().isBlank()) {
+                continue;
+            }
+            if (lyricsMatch(t, artist, title)) {
+                dto.setArtist(t.getArtistName() != null ? t.getArtistName() : artist);
+                dto.setTitle(t.getTitle());
+                // 原样返回内嵌歌词：含 LRC 时间戳的行保留标签（Musly 等客户端靠解析 [mm:ss] 驱动滚动）
+                dto.setValue(t.getLyrics().trim());
+                return dto;
+            }
+        }
+        return dto;
+    }
+
+    /** getLyricsBySongId（OS songLyrics）：曲目歌词 → structuredLyrics（能解析出时间戳则同步）。 */
+    public LyricsList buildLyricsList(Track t) {
+        LyricsList dto = new LyricsList();
+        List<LyricsList.StructuredLyrics> items = new ArrayList<>();
+        String lyrics = t.getLyrics();
+        if (lyrics != null && !lyrics.isBlank()) {
+            LyricsList.StructuredLyrics s = new LyricsList.StructuredLyrics();
+            s.setDisplayArtist(t.getArtistName());
+            s.setDisplayTitle(t.getTitle());
+            s.setLang("und");
+            List<LyricsList.StructuredLyrics.Line> lines = new ArrayList<>();
+            List<SyncedLine> synced = parseSyncedLyrics(lyrics);
+            if (synced != null) {
+                s.setSynced(true);
+                for (SyncedLine sl : synced) {
+                    LyricsList.StructuredLyrics.Line line = new LyricsList.StructuredLyrics.Line();
+                    line.setStart(sl.start());
+                    line.setValue(sl.text());
+                    lines.add(line);
+                }
+            } else {
+                s.setSynced(false);
+                for (String raw : lyrics.split("\\r?\\n")) {
+                    String text = raw.trim();
+                    if (!text.isEmpty() && !isLrcMetaLine(text)) {
+                        LyricsList.StructuredLyrics.Line line = new LyricsList.StructuredLyrics.Line();
+                        line.setValue(text);
+                        lines.add(line);
+                    }
+                }
+                if (lines.isEmpty()) { // 兜底：整段作为一行
+                    LyricsList.StructuredLyrics.Line line = new LyricsList.StructuredLyrics.Line();
+                    line.setValue(lyrics.trim());
+                    lines.add(line);
+                }
+            }
+            s.setLine(lines);
+            items.add(s);
+        }
+        dto.setStructuredLyrics(items);
+        return dto;
+    }
+
+    private static boolean lyricsMatch(Track t, String artist, String title) {
+        boolean titleOk = title == null || title.isBlank()
+                || (t.getTitle() != null && t.getTitle().equalsIgnoreCase(title.trim()));
+        boolean artistOk = artist == null || artist.isBlank()
+                || (t.getArtistName() != null && t.getArtistName().equalsIgnoreCase(artist.trim()));
+        return titleOk && artistOk;
+    }
+
+    /** 是否 LRC 元信息行（如 [ar:…] [ti:…] [offset:…]），非同步展示时剔除。 */
+    private static boolean isLrcMetaLine(String text) {
+        return text.startsWith("[") && text.endsWith("]") && text.indexOf(']') > 1;
+    }
+
+    /** LRC 时间标签：{@code [mm:ss[.xx]]} 或 {@code [mm:ss.xxx]}，可一行多标签。 */
+    private static final java.util.regex.Pattern LRC_TAG =
+            java.util.regex.Pattern.compile("^\\s*\\[([0-9]{1,3}):([0-9]{1,2})(?:[.:]([0-9]{1,3}))?\\]");
+
+    /**
+     * 解析同步歌词；无任何时间戳返回 null（调用方按非同步处理）。
+     *
+     * @return 时间升序的行（start 毫秒）
+     */
+    private static List<SyncedLine> parseSyncedLyrics(String text) {
+        List<SyncedLine> out = new ArrayList<>();
+        boolean any = false;
+        for (String raw : text.split("\\r?\\n")) {
+            String rest = raw;
+            List<Long> starts = new ArrayList<>();
+            java.util.regex.Matcher m;
+            while ((m = LRC_TAG.matcher(rest)).lookingAt()) {
+                starts.add(toMillis(m.group(1), m.group(2), m.group(3)));
+                rest = rest.substring(m.end());
+            }
+            if (!starts.isEmpty()) {
+                any = true;
+            }
+            String lyric = rest.trim();
+            if (lyric.isEmpty() || starts.isEmpty()) {
+                continue;
+            }
+            for (Long start : starts) {
+                out.add(new SyncedLine(start, lyric));
+            }
+        }
+        return any ? out : null;
+    }
+
+    /** mm / ss / 分数段 → 毫秒（1 位=百毫秒、2 位=厘秒[×10]、3 位=毫秒）。 */
+    private static long toMillis(String mm, String ss, String frac) {
+        long ms = Long.parseLong(mm) * 60_000L + Long.parseLong(ss) * 1000L;
+        if (frac != null && !frac.isEmpty()) {
+            long f = Long.parseLong(frac);
+            ms += frac.length() == 1 ? f * 100L : frac.length() == 2 ? f * 10L : f;
+        }
+        return ms;
+    }
+
+    /** 同步歌词行 */
+    private record SyncedLine(long start, String text) {
+    }
+
     // ---------- 扫描 / 用户 / 扩展 ----------
 
     public ScanStatus buildScanStatus() {
@@ -597,8 +782,17 @@ public class SubsonicAssembler {
 
     public OpenSubsonicExtensions buildOpenSubsonicExtensions() {
         OpenSubsonicExtensions dto = new OpenSubsonicExtensions();
-        dto.setOpenSubsonicExtension(List.of()); // v1 无扩展声明
+        // songLyrics 扩展版本号为整数 1/2（见 OS 扩展文档）：仅实现 Version 1（line 级同步/多语言），
+        // 未实现 Version 2（enhanced/karaoke）故只通告 "1"
+        dto.setOpenSubsonicExtension(List.of(ext("songLyrics", "1")));
         return dto;
+    }
+
+    private static OpenSubsonicExtensions.Extension ext(String name, String versions) {
+        OpenSubsonicExtensions.Extension e = new OpenSubsonicExtensions.Extension();
+        e.setName(name);
+        e.setVersions(versions);
+        return e;
     }
 
     // ---------- 工具 ----------

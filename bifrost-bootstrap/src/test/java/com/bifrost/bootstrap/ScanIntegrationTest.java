@@ -139,6 +139,79 @@ class ScanIntegrationTest {
     }
 
     @Test
+    void fullRescanReParsesUnchangedFiles() throws Exception {
+        createSampleLibrary();
+        LibraryRoot root = createRoot();
+        assertEquals(4, scanService.scanRoot(root.getId()).added());
+        // 增量幂等：指纹一致 → 全部跳过
+        assertEquals(0, scanService.scanRoot(root.getId()).updated());
+        // 强制全量重解析：指纹一致也重读标签（回填歌词等新字段的场景）
+        ScanStats forced = scanService.scanRoot(root.getId(), true);
+        assertEquals(0, forced.added());
+        assertEquals(4, forced.updated()); // 每首曲目都被重解析（updated 计数=重解析）
+        assertEquals(0, forced.missing());
+        assertEquals(4, trackRepository.findByLibraryRootId(root.getId()).size());
+        // 强制扫描不破坏指纹，随后增量扫描仍幂等
+        assertEquals(0, scanService.scanRoot(root.getId()).updated());
+    }
+
+    @Test
+    void fullRescanPurgesDeletedFiles() throws Exception {
+        createSampleLibrary();
+        LibraryRoot root = createRoot();
+        scanService.scanRoot(root.getId());
+        Track gone = trackRepository.findAll().stream()
+                .filter(t -> t.getFilePath().endsWith("东风破.mp3")).findFirst().orElseThrow();
+        Files.delete(musicDir.resolve("周杰伦/叶惠美/02 - 东风破.mp3"));
+        // 歌单引用全部曲目
+        Long playlistId = playlistService.create("引用歌单", null, 1L).getId();
+        for (Track t : trackRepository.findAll()) {
+            playlistService.addEntry(playlistId, t.getId());
+        }
+        assertEquals(4, playlistEntryRepository.findByPlaylistId(playlistId).size());
+
+        // 增量扫描：缺失→标记隐藏，记录与歌单条目保留
+        ScanStats inc = scanService.scanRoot(root.getId());
+        assertEquals(1, inc.missing());
+        assertTrue(trackRepository.findById(gone.getId()).isPresent());
+        assertEquals(4, playlistEntryRepository.findByPlaylistId(playlistId).size());
+
+        // 全量重扫：已删文件彻底移除（含隐藏记录），并清理歌单条目/书签/播放队列引用
+        ScanStats full = scanService.scanRoot(root.getId(), true);
+        assertEquals(1, full.missing());
+        assertTrue(trackRepository.findById(gone.getId()).isEmpty());
+        assertEquals(3, trackRepository.findByLibraryRootId(root.getId()).size());
+        assertEquals(3, playlistEntryRepository.findByPlaylistId(playlistId).size());
+        // 全量重扫后无缺失残留：再全量重扫 missing=0
+        ScanStats full2 = scanService.scanRoot(root.getId(), true);
+        assertEquals(0, full2.missing());
+    }
+
+    @Test
+    void deletedFileRestoredSameMtimeIsResurrected() throws Exception {
+        createSampleLibrary();
+        LibraryRoot root = createRoot();
+        scanService.scanRoot(root.getId());
+        Path f = musicDir.resolve("周杰伦/叶惠美/02 - 东风破.mp3");
+        Track gone = trackRepository.findAll().stream()
+                .filter(t -> t.getFilePath().endsWith("东风破.mp3")).findFirst().orElseThrow();
+        long originalMtime = Files.getLastModifiedTime(f).toMillis();
+        byte[] bytes = Files.readAllBytes(f);
+        Files.delete(f);
+        ScanStats hidden = scanService.scanRoot(root.getId());
+        assertEquals(1, hidden.missing());
+        assertFalse(trackRepository.findById(gone.getId()).orElseThrow().getIsAvailable());
+        // 原样拷回并还原 mtime → 指纹与"隐藏记录"完全一致
+        Files.write(f, bytes);
+        Files.setLastModifiedTime(f, java.nio.file.attribute.FileTime.fromMillis(originalMtime));
+        ScanStats back = scanService.scanRoot(root.getId());
+        assertEquals(0, back.added()); // 不是新增，而是复活原记录
+        assertEquals(0, back.missing());
+        assertTrue(trackRepository.findById(gone.getId()).orElseThrow().getIsAvailable());
+        assertEquals(4, trackRepository.findByLibraryRootId(root.getId()).size());
+    }
+
+    @Test
     void fileChangeAndDeleteDetected() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();

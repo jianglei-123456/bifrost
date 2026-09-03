@@ -87,6 +87,14 @@ public class SubsonicResponse {
     private Users users;
     @JacksonXmlProperty(localName = "openSubsonicExtensions")
     private OpenSubsonicExtensions openSubsonicExtensions;
+    @JacksonXmlProperty(localName = "bookmarks")
+    private Bookmarks bookmarks;
+    @JacksonXmlProperty(localName = "playQueue")
+    private PlayQueue playQueue;
+    @JacksonXmlProperty(localName = "lyrics")
+    private Lyrics lyrics;
+    @JacksonXmlProperty(localName = "lyricsList")
+    private LyricsList lyricsList;
 
     /** 成功信封。 */
     public static SubsonicResponse ok(String apiVersion) {

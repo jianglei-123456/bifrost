@@ -15,14 +15,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * 管理 REST 全局异常处理器。
+ * 管理 REST 全局异常处理器（仅 /api/** 管理端点；Subsonic /rest/** 由 syrinx 侧的
+ * {@code SubsonicExceptionHandler} 处理，避免 ApiResponse 信封劫持二进制/流式响应）。
  *
  * <p>BizException → 对应业务码与 HTTP 状态；未知异常 → 500 + 1200。
  * HTTP 状态映射（《通用功能说明》§4.1）：1000/1004→400、1001→404、1002→401、
  * 1003→403、1100→409（扫描进行中，冲突语义）、1200→500。</p>
  */
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.bifrost.api")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BizException.class)
