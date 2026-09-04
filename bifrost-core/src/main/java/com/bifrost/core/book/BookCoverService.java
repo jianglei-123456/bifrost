@@ -32,6 +32,9 @@ public class BookCoverService {
     /** coverSource 标记：内嵌图（来自 EPUB 容器或 XMP 缩略图） */
     public static final String EMBEDDED = "EMBEDDED";
 
+    /** coverSource 标记：用户上传（优先级高于 EMBEDDED；扫描遇 EMBEDDED 不覆盖） */
+    public static final String UPLOADED = "UPLOADED";
+
     private final BifrostProperties properties;
     private final BookRepository bookRepository;
 
@@ -67,6 +70,61 @@ public class BookCoverService {
         } catch (IOException e) {
             log.warn("图书内嵌封面落盘失败: book={}", book.getId(), e);
             return false;
+        }
+    }
+
+    /**
+     * 存储用户上传封面（覆盖现有任何来源）。先 delete 再写，确保缓存重建。
+     *
+     * @return 写入字节数（0=失败）
+     */
+    public long storeUploadedCover(Book book, byte[] data) {
+        if (book == null || book.getId() == null || data == null || data.length == 0) {
+            return 0L;
+        }
+        // 先清旧（缓存一并）
+        delete(book);
+        // 等比缩小到 maxWidth=1200（避免大图占盘）；写为 JPEG
+        byte[] jpeg;
+        try {
+            jpeg = normalizeToJpeg(data, 1200);
+        } catch (IOException e) {
+            log.warn("图书上传封面解码失败: book={} err={}", book.getId(), e.getMessage());
+            return 0L;
+        }
+        try {
+            FileIO.ensureDirs(coverSourceDir());
+            Path target = coverSourceDir().resolve("book-" + book.getId() + ".jpg");
+            Files.write(target, jpeg);
+            book.setCoverSource(UPLOADED);
+            bookRepository.save(book);
+            return jpeg.length;
+        } catch (IOException e) {
+            log.warn("图书上传封面落盘失败: book={}", book.getId(), e);
+            return 0L;
+        }
+    }
+
+    /** 用 ImageIO 读 → 等比缩放到 maxWidth → JPEG 编码。失败抛异常由调用方 catch。 */
+    private static byte[] normalizeToJpeg(byte[] data, int maxWidth) throws IOException {
+        try (var in = new java.io.ByteArrayInputStream(data)) {
+            BufferedImage src = ImageIO.read(in);
+            if (src == null) {
+                throw new IOException("无法识别图像格式");
+            }
+            BufferedImage target = src;
+            if (src.getWidth() > maxWidth) {
+                int h = (int) Math.round(src.getHeight() * (maxWidth / (double) src.getWidth()));
+                target = new BufferedImage(maxWidth, h, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g = target.createGraphics();
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g.drawImage(src, 0, 0, maxWidth, h, null);
+                g.dispose();
+            }
+            var out = new java.io.ByteArrayOutputStream();
+            ImageIO.write(target, "jpg", out);
+            return out.toByteArray();
         }
     }
 

@@ -19,7 +19,7 @@ ebook_root_id: jsonpath "$.data.id"
 [Asserts]
 jsonpath "$.code" == 0
 
-# 触发扫描
+# 触发扫描（同步：M1 /api/library-roots/{id}/scan 走同步模式）
 POST {{base_url}}/api/library-roots/{{ebook_root_id}}/scan
 Authorization: Basic YWRtaW46dGVzdHBhc3M=
 HTTP 200

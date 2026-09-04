@@ -6,6 +6,11 @@ $ebookDir = Join-Path $repo 'data-sample\ebook'
 Remove-Item -Recurse -Force $ebookDir -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $ebookDir | Out-Null
 
+# 同样保留一份在 hurl/ 目录，让 hurl 解析 multipart 时能找到
+$hurlDir = Join-Path $PSScriptRoot 'hurl-fixtures'
+Remove-Item -Recurse -Force $hurlDir -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $hurlDir | Out-Null
+
 # ============== Cover JPEG (16x16 solid color) ==============
 Add-Type -AssemblyName System.Drawing
 $bmp = New-Object System.Drawing.Bitmap(16, 16)
@@ -16,6 +21,10 @@ $coverJpg = Join-Path $ebookDir 'cover-test.jpg'
 $bmp.Save($coverJpg, [System.Drawing.Imaging.ImageFormat]::Jpeg)
 $bmp.Dispose()
 $coverBytes = [System.IO.File]::ReadAllBytes($coverJpg)
+# 复制到 hurl-fixtures（hurl 解析 multipart 时按 file= 后路径在 file-root 找）
+Copy-Item $coverJpg (Join-Path $hurlDir 'cover-test.jpg') -Force
+# 也在 api/ 目录放一份（hurl file-root 默认就是 hurl 文件所在目录，避免 .. 越界）
+Copy-Item $coverJpg (Join-Path $PSScriptRoot 'api\cover-test.jpg') -Force
 
 # ============== EPUB ==============
 function New-Epub {

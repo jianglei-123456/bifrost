@@ -758,7 +758,9 @@ public class SubsonicAssembler {
 
     public ScanStatus buildScanStatus() {
         ScanStatus dto = new ScanStatus();
+        // 仅检查 MUSIC 根（M2-book 起图书扫描状态由 /api/book-roots/scan/status 单独提供，物理隔开）
         dto.setScanning(libraryRootRepository.findAll().stream()
+                .filter(r -> r.getMediaType() == com.bifrost.domain.enums.MediaType.MUSIC)
                 .anyMatch(r -> r.getScanStatus() == com.bifrost.domain.enums.ScanStatus.SCANNING));
         dto.setCount(trackRepository.count());
         return dto;

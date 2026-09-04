@@ -140,10 +140,10 @@ public class LibraryRootController {
         return ApiResponse.ok(scanService.scanAll(fullScan));
     }
 
-    /** 扫描状态 */
+    /** 扫描状态（MUSIC 根；BOOK 根扫描状态读 {@code /api/book-roots/scan/status}） */
     @GetMapping("/scan/status")
     public ApiResponse<ScanStatusView> scanStatus() {
-        List<LibraryRoot> roots = libraryRootRepository.findAllByOrderByIdAsc();
+        List<LibraryRoot> roots = libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType.MUSIC);
         boolean scanning = roots.stream().anyMatch(r -> r.getScanStatus() == ScanStatus.SCANNING);
         return ApiResponse.ok(new ScanStatusView(scanning, roots));
     }
