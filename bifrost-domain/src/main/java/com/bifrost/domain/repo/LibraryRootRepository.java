@@ -25,6 +25,12 @@ public interface LibraryRootRepository extends JpaRepository<LibraryRoot, Long> 
     List<LibraryRoot> findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType mediaType);
 
     /**
+     * 按媒体类型查全部（含停用），ID 升序。
+     * 供管理端列表展示"启用"开关：停用根须仍可列出以便重新启用/删除。
+     */
+    List<LibraryRoot> findByMediaTypeOrderByIdAsc(MediaType mediaType);
+
+    /**
      * 启动时回填：将 {@code mediaType} 为 null 的行（@Enumerated(STRING)）置为传入值。
      * 仅用于 ddl-auto=update 添加新列后的历史数据兜底。
      */

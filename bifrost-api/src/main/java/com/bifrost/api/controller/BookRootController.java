@@ -47,12 +47,16 @@ public class BookRootController {
     private final BookRepository bookRepository;
     private final BookScanService bookScanService;
 
-    /** 列出 BOOK 类型库根（默认仅 BOOK） */
+    /**
+     * 列出 BOOK 库根（含停用，ID 升序）。
+     *
+     * <p>停用根一并返回：管理端列表需展示"启用"开关（Q25），停用后可再启用；
+     * 扫描/状态读仍只取启用根（{@code EnabledTrue}），此处不设 enabled 过滤。</p>
+     */
     @GetMapping
-    public ApiResponse<List<BookRootDto>> list(
-            @RequestParam(required = false, defaultValue = "BOOK") MediaType mediaType) {
+    public ApiResponse<List<BookRootDto>> list() {
         // 强制 BOOK 过滤；不允许通过 URL 改查 music（与 /api/library-roots 物理隔开）
-        List<BookRootDto> items = libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(mediaType)
+        List<BookRootDto> items = libraryRootRepository.findByMediaTypeOrderByIdAsc(MediaType.BOOK)
                 .stream()
                 .map(BookRootDto::of)
                 .toList();
