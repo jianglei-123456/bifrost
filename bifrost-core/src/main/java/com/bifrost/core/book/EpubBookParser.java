@@ -4,6 +4,7 @@ import com.bifrost.common.util.FileIO;
 import com.bifrost.common.util.Strings;
 import com.bifrost.core.book.model.BookResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import net.sf.jazzlib.ZipFile;
 import nl.siegmann.epublib.domain.Author;
 import nl.siegmann.epublib.domain.Book;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
  * 解析异常 → {@link BookResult#fallback}（{@code parseError=true}）。</p>
  */
 @Slf4j
+@Component
 public class EpubBookParser implements BookParser {
 
     /** EPUB 与 KEPUB 共享此解析器（KEPUB 结构上是 EPUB） */

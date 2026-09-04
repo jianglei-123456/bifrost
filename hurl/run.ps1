@@ -13,8 +13,11 @@ if (-not (Test-Path $jar)) {
     if ($LASTEXITCODE -ne 0) { throw 'package failed' }
 }
 
-# 2) sample music
+# 2) sample music + ebook
 & pwsh -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'gen-sample-music.ps1')
+if (Test-Path (Join-Path $PSScriptRoot 'gen-sample-ebook.ps1')) {
+    & pwsh -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'gen-sample-ebook.ps1')
+}
 
 # 3) clean db + start app
 Remove-Item -Force (Join-Path $repo 'data\hurl.db'), (Join-Path $repo 'data\hurl.db-wal'), (Join-Path $repo 'data\hurl.db-shm') -ErrorAction SilentlyContinue
@@ -41,7 +44,11 @@ try {
     & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'setup.hurl')
     if ($LASTEXITCODE -ne 0) { throw 'setup.hurl failed' }
     & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'api') (Join-Path $PSScriptRoot 'rest')
-    if ($LASTEXITCODE -ne 0) { throw 'contract tests failed' }
+    if ($LASTEXITCODE -ne 0) { throw 'api/rest contract tests failed' }
+    if (Test-Path (Join-Path $PSScriptRoot 'opds')) {
+        & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'opds')
+        if ($LASTEXITCODE -ne 0) { throw 'opds contract tests failed' }
+    }
     Write-Host '==> all hurl contract tests passed'
 } finally {
     if (-not $app.HasExited) { Stop-Process -Id $app.Id -Force }

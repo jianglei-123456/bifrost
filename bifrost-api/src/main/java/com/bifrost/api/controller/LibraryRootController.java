@@ -5,10 +5,12 @@ import com.bifrost.api.response.ApiResponse;
 import com.bifrost.common.exception.BizException;
 import com.bifrost.common.util.Strings;
 import com.bifrost.core.audio.ScanService;
+import com.bifrost.core.book.BookScanService;
 import com.bifrost.core.event.ScanStats;
 import com.bifrost.domain.entity.LibraryRoot;
 import com.bifrost.domain.enums.MediaType;
 import com.bifrost.domain.enums.ScanStatus;
+import com.bifrost.domain.repo.BookRepository;
 import com.bifrost.domain.repo.LibraryRootRepository;
 import com.bifrost.domain.repo.TrackRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,9 @@ public class LibraryRootController {
 
     private final LibraryRootRepository libraryRootRepository;
     private final TrackRepository trackRepository;
+    private final BookRepository bookRepository;
     private final ScanService scanService;
+    private final BookScanService bookScanService;
 
     /** 库根列表（含扫描状态与上次统计） */
     @GetMapping("/library-roots")
@@ -100,13 +104,18 @@ public class LibraryRootController {
         return ApiResponse.ok(libraryRootRepository.save(root));
     }
 
-    /** 删除库根 → 级联隐藏其曲目（不物理删除记录，标记 isAvailable=false，见《音乐管理技术设计》§1.7） */
+    /** 删除库根 → 级联隐藏其曲目/图书（不物理删除记录，标记 isAvailable=false，见《音乐管理技术设计》§1.7） */
     @DeleteMapping("/library-roots/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         LibraryRoot root = requireRoot(id);
         for (var track : trackRepository.findByLibraryRootId(id)) {
             track.setIsAvailable(false);
             trackRepository.save(track);
+        }
+        // 图书 isAvailable 也置 false（不删除物理记录，Q5 B 同款）
+        for (var book : bookRepository.findByLibraryRootId(id)) {
+            book.setIsAvailable(false);
+            bookRepository.save(book);
         }
         libraryRootRepository.delete(root);
         return ApiResponse.ok();
@@ -116,10 +125,16 @@ public class LibraryRootController {
     @PostMapping("/library-roots/{id}/scan")
     public ApiResponse<ScanStats> scanRoot(@PathVariable Long id,
                                            @RequestParam(defaultValue = "false") boolean fullScan) {
+        // 按 mediaType 路由到对应扫描器（ADR-0004 物理隔开）
+        LibraryRoot root = requireRoot(id);
+        if (root.getMediaType() == MediaType.BOOK) {
+            return ApiResponse.ok(bookScanService.scanRoot(id, fullScan));
+        }
         return ApiResponse.ok(scanService.scanRoot(id, fullScan));
     }
 
-    /** 触发全量扫描（全部启用库根，串行）；fullScan=true 强制全量重解析 */
+    /** 触发全量扫描（全部启用库根，串行）；fullScan=true 强制全量重解析
+     *  Day-one 仅扫音乐库根；图书库根按需触发（Q3 B：独立调度） */
     @PostMapping("/scan")
     public ApiResponse<ScanStats> scanAll(@RequestParam(defaultValue = "false") boolean fullScan) {
         return ApiResponse.ok(scanService.scanAll(fullScan));

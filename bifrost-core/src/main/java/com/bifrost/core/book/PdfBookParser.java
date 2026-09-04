@@ -4,6 +4,7 @@ import com.bifrost.common.util.FileIO;
 import com.bifrost.common.util.Strings;
 import com.bifrost.core.book.model.BookResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -28,6 +29,7 @@ import java.util.List;
  * 解析异常 → {@link BookResult#fallback}（{@code parseError=true}）。</p>
  */
 @Slf4j
+@Component
 public class PdfBookParser implements BookParser {
 
     private static final String FORMAT_PDF = "PDF";

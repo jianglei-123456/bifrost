@@ -24,6 +24,11 @@
             <groupId>com.bifrost</groupId>
             <artifactId>subsonic-api</artifactId>
         </dependency>
+        <!-- OPDS 1.2 协议发布（M2-book）：/opds/** 控制器由 bootstrap 跨模块扫描注册 -->
+        <dependency>
+            <groupId>com.bifrost</groupId>
+            <artifactId>opds-publisher</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
