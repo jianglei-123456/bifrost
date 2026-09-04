@@ -37,6 +37,9 @@ public class BifrostProperties {
     /** Subsonic 服务配置 */
     private Subsonic subsonic = new Subsonic();
 
+    /** OPDS 配置（M2-book） */
+    private Opds opds = new Opds();
+
     /** 跨域（CORS）配置 */
     private Cors cors = new Cors();
 
@@ -52,18 +55,20 @@ public class BifrostProperties {
     @Getter
     @Setter
     public static class Library {
-        /** 库根列表：name / path / enabled */
+        /** 库根列表：name / path / enabled / mediaType */
         private List<Root> roots = new ArrayList<>();
 
         @Getter
         @Setter
         public static class Root {
-            /** 库根名称（Subsonic musicFolder 名） */
+            /** 库根名称（Subsonic musicFolder 名 / OPDS 显示名） */
             private String name;
             /** 库根目录绝对路径 */
             private String path;
             /** 是否启用 */
             private Boolean enabled = true;
+            /** 媒体类型（v2 增；MUSIC/BOOK；默认 MUSIC 兼容历史 yml） */
+            private com.bifrost.domain.enums.MediaType mediaType = com.bifrost.domain.enums.MediaType.MUSIC;
         }
     }
 
@@ -83,6 +88,14 @@ public class BifrostProperties {
         private String cron = "0 3 * * *";
         /** 事务批大小（文件数） */
         private int batchSize = 200;
+    }
+
+    /** OPDS 配置（M2-book） */
+    @Getter
+    @Setter
+    public static class Opds {
+        /** 是否要求 HTTP Basic 认证（默认 false=匿名，Q6-C） */
+        private boolean requireAuth = false;
     }
 
     /** 认证配置 */

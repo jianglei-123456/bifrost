@@ -68,6 +68,32 @@
                 <artifactId>subsonic-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.bifrost</groupId>
+                <artifactId>opds-publisher</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- M2-book 外部依赖（中央仓库；版本经调研档核实） -->
+            <dependency>
+                <groupId>com.positiondev.epublib</groupId>
+                <artifactId>epublib-core</artifactId>
+                <version>3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>3.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>xmpbox</artifactId>
+                <version>3.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.13.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -78,11 +104,17 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- 所有模块统一测试基座 -->
+        <!-- 所有模块统一测试基座（排除 slf4j-simple：与 bifrost-bootstrap 的 logback 冲突） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

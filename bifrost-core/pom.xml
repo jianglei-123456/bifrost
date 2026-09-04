@@ -40,5 +40,38 @@
             <artifactId>jpinyin</artifactId>
             <version>1.1.8</version>
         </dependency>
+        <!-- M2-book 电子书元数据解析（ADR-0004 物理隔开）
+             显式排除 slf4j-simple：epublib-core 自带它，与 bifrost-bootstrap 的 logback 冲突 -->
+        <dependency>
+            <groupId>com.positiondev.epublib</groupId>
+            <artifactId>epublib-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>xmpbox</artifactId>
+        </dependency>
+        <!-- Test scope：JUnit 5 + Mockito + AssertJ（spring-boot-starter-test 集成）
+             显式排除 slf4j-simple，避免与 bifrost-bootstrap 的 logback 冲突 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 </project>

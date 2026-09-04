@@ -7,6 +7,7 @@ import com.bifrost.common.util.Strings;
 import com.bifrost.core.audio.ScanService;
 import com.bifrost.core.event.ScanStats;
 import com.bifrost.domain.entity.LibraryRoot;
+import com.bifrost.domain.enums.MediaType;
 import com.bifrost.domain.enums.ScanStatus;
 import com.bifrost.domain.repo.LibraryRootRepository;
 import com.bifrost.domain.repo.TrackRepository;
@@ -32,7 +33,7 @@ import java.util.List;
 public class LibraryRootController {
 
     /** 库根创建/编辑请求体 */
-    public record LibraryRootRequest(String name, String path, Boolean enabled) {
+    public record LibraryRootRequest(String name, String path, Boolean enabled, MediaType mediaType) {
     }
 
     private final LibraryRootRepository libraryRootRepository;
@@ -41,8 +42,12 @@ public class LibraryRootController {
 
     /** 库根列表（含扫描状态与上次统计） */
     @GetMapping("/library-roots")
-    public ApiResponse<List<LibraryRoot>> list() {
-        return ApiResponse.ok(libraryRootRepository.findAllByOrderByIdAsc());
+    public ApiResponse<List<LibraryRoot>> list(
+            @RequestParam(required = false) MediaType mediaType) {
+        List<LibraryRoot> roots = (mediaType == null)
+                ? libraryRootRepository.findAllByOrderByIdAsc()
+                : libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(mediaType);
+        return ApiResponse.ok(roots);
     }
 
     /** 新增库根 */
@@ -60,6 +65,7 @@ public class LibraryRootController {
         root.setName(name);
         root.setPath(path);
         root.setEnabled(request.enabled() == null || request.enabled());
+        root.setMediaType(request.mediaType() == null ? MediaType.MUSIC : request.mediaType());
         return ApiResponse.ok(libraryRootRepository.save(root));
     }
 
@@ -87,6 +93,9 @@ public class LibraryRootController {
         }
         if (request.enabled() != null) {
             root.setEnabled(request.enabled());
+        }
+        if (request.mediaType() != null) {
+            root.setMediaType(request.mediaType());
         }
         return ApiResponse.ok(libraryRootRepository.save(root));
     }

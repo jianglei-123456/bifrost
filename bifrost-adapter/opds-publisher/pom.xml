@@ -12,5 +12,22 @@
 
     <artifactId>opds-publisher</artifactId>
     <name>opds-publisher</name>
-    <description>生成图书 OPDS 流的适配器</description>
+    <description>生成图书 OPDS 流的适配器（M2-book）</description>
+
+    <dependencies>
+        <!-- 父 POM 已统一依赖 bifrost-core（bifrost-domain 通过 core 传递） -->
+        <dependency>
+            <groupId>com.bifrost</groupId>
+            <artifactId>bifrost-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- XML 转义（用于 Atom 模板用户输入字段） -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+    </dependencies>
 </project>
