@@ -1,8 +1,10 @@
 package com.bifrost.core.book.sync;
 
 import com.bifrost.common.exception.BizException;
+import com.bifrost.domain.entity.Book;
 import com.bifrost.domain.entity.ReadingProgress;
 import com.bifrost.domain.entity.SyncDevice;
+import com.bifrost.domain.enums.ProgressMatchSource;
 import com.bifrost.domain.repo.ReadingProgressRepository;
 import com.bifrost.domain.repo.SyncDeviceRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class ReadingProgressService {
 
     private final ReadingProgressRepository progressRepository;
     private final SyncDeviceRepository deviceRepository;
+    private final ProgressBookMatcher matcher;
     private final PlatformTransactionManager transactionManager;
 
     /** 写入结果：{@code firstAppearance} = 该（账号, 指纹）首次建行，是自动扫描的<b>唯一</b>触发条件（C1）。 */
@@ -84,6 +87,27 @@ public class ReadingProgressService {
     /** 协议读路径。 */
     public Optional<ReadingProgress> find(Long syncAccountId, String documentFingerprint) {
         return progressRepository.findBySyncAccountIdAndDocumentFingerprint(syncAccountId, documentFingerprint);
+    }
+
+    /**
+     * 首次上报的<b>即时匹配</b>（M3-sync T1.5）：库里已经有这本书时直接绑定，不必等扫描。
+     *
+     * <p>未命中返回 {@code false}，且<b>不</b>写 {@code scanAttemptedAt}——"结算"是扫描完成后的动作，
+     * 由 {@link OrphanProgressService#settlePending(Long)} 负责。</p>
+     *
+     * @return 命中并绑定返回 true
+     */
+    @Transactional
+    public boolean tryAutoMatch(Long progressId) {
+        ReadingProgress row = get(progressId);
+        Book book = matcher.match(row.getDocumentFingerprint()).orElse(null);
+        if (book == null) {
+            return false;
+        }
+        row.setBookId(book.getId());
+        row.setMatchSource(ProgressMatchSource.AUTO);
+        progressRepository.save(row);
+        return true;
     }
 
     /** 按 id 取（不存在 → 1001）。 */

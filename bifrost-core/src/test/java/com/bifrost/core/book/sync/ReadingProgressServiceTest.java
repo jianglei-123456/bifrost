@@ -25,10 +25,11 @@ class ReadingProgressServiceTest {
 
     private final ReadingProgressRepository progressRepository = mock(ReadingProgressRepository.class);
     private final SyncDeviceRepository deviceRepository = mock(SyncDeviceRepository.class);
+    private final ProgressBookMatcher matcher = mock(ProgressBookMatcher.class);
     private final PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
 
     private final ReadingProgressService service =
-            new ReadingProgressService(progressRepository, deviceRepository, transactionManager);
+            new ReadingProgressService(progressRepository, deviceRepository, matcher, transactionManager);
 
     @BeforeEach
     void setUp() {

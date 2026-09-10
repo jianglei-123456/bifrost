@@ -109,19 +109,29 @@ public class SyncAccountService {
      * <p>失败原因（未知账号 / 口令不符）对调用方<b>不作区分</b>，避免账号枚举。</p>
      */
     public boolean verify(String username, String authKey) {
+        return authenticate(username, authKey).isPresent();
+    }
+
+    /**
+     * 校验并返回账号（协议过滤器用；成功时把账号 id 放进请求属性供控制器读取）。
+     *
+     * @return 凭据有效时的账号；否则 {@link Optional#empty()}
+     */
+    public Optional<SyncAccount> authenticate(String username, String authKey) {
         if (username == null || username.isBlank() || authKey == null || authKey.isBlank()) {
-            return false;
+            return Optional.empty();
         }
         SyncAccount account = syncAccountRepository.findByUsername(username.trim()).orElse(null);
         if (account == null) {
-            return false;
+            return Optional.empty();
         }
         String plain = revealPassword(account);
         if (plain == null) {
-            return false;
+            return Optional.empty();
         }
-        return SubsonicTokenUtil.constantTimeEquals(
+        boolean ok = SubsonicTokenUtil.constantTimeEquals(
                 SubsonicTokenUtil.token(plain, ""), authKey.trim().toLowerCase());
+        return ok ? Optional.of(account) : Optional.empty();
     }
 
     /** 生成 16 位随机口令（不含易混字符）。 */

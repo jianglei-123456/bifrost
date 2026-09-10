@@ -85,12 +85,16 @@
 | 成功（**无条件覆盖**，绝不返回 202） | **200** | `{"document":"<document>","timestamp":<秒级 epoch>}` |
 | 认证失败（过滤器拦截） | **401** | `{"code":3001,...}` |
 | `document` 缺失/空/含 `:`/超 64 字符 | **403** | `{"code":3003,"message":"..."}` |
-| `percentage` 缺失或非数字、`progress` 缺失或空白、`device` 缺失或空白 | **403** | `{"code":3003,"message":"..."}` |
+| `percentage` 缺失或非数字、`progress` 缺失或空白、`device` 缺失或空白、`device_id` 缺失或空白 | **403** | `{"code":3003,"message":"..."}` |
 | 内部错误 | **502** | `{"code":3000,...}` |
+
+> **与官方的一处有意偏离**：官方只校验 `document`/`percentage`/`progress`/`device`，**不校验** `device_id`。
+> 我们要求 `device_id` 非空（403）——客户端把它列为 `required_params`，真实设备**永远会发**；而库里
+> `device_id` 是设备表的唯一键，让它为空会把不同设备混成一行。
 
 - `percentage` 接受 0（0 是合法值）；**超范围（<0 或 >1）不拒绝**，按原值存储（客户端已截断到 4 位小数；服务端不做"聪明"的修正）。
 - 响应 `timestamp` = 落库的 `reportedAt.getEpochSecond()`，**秒级**（毫秒会让客户端判定"永远更新"从而反复跳转）。
-- 端点内只做 upsert + 设备计数 + **异步**触发扫描（T1.5），绝不同步扫库（客户端超时 2/5 秒）。
+- 端点内只做 upsert + **即时匹配（一次 DB 查询）** + 设备计数 + **异步**触发扫描（T1.5），绝不同步扫库（客户端超时 2/5 秒）。
 
 ### ④ `GET /syncs/progress/{document}`
 

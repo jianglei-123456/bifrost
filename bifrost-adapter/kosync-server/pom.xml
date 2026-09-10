@@ -6,27 +6,23 @@
 
     <parent>
         <groupId>com.bifrost</groupId>
-        <artifactId>bifrost</artifactId>
+        <artifactId>bifrost-adapter</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>bifrost-adapter</artifactId>
-    <packaging>pom</packaging>
-    <name>bifrost-adapter</name>
-    <description>【关键层】对接外部客户端的具体实现（聚合 POM）</description>
-
-    <modules>
-        <module>syrinx</module>
-        <module>jellyfin-client</module>
-        <module>opds-publisher</module>
-        <module>kosync-server</module>
-    </modules>
+    <artifactId>kosync-server</artifactId>
+    <name>kosync-server</name>
+    <description>KOSync 阅读进度同步协议服务端（M3-sync，/users/** /syncs/** /healthcheck）</description>
 
     <dependencies>
-        <!-- 适配器统一依赖核心业务层 -->
+        <!-- 父 POM 已统一依赖 bifrost-core（bifrost-domain 通过 core 传递） -->
         <dependency>
             <groupId>com.bifrost</groupId>
-            <artifactId>bifrost-core</artifactId>
+            <artifactId>bifrost-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
     </dependencies>
 </project>

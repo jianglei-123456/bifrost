@@ -73,6 +73,11 @@
                 <artifactId>opds-publisher</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.bifrost</groupId>
+                <artifactId>kosync-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- M2-book 外部依赖（中央仓库；版本经调研档核实） -->
             <dependency>
                 <groupId>com.positiondev.epublib</groupId>

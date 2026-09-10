@@ -29,6 +29,11 @@
             <groupId>com.bifrost</groupId>
             <artifactId>opds-publisher</artifactId>
         </dependency>
+        <!-- KOSync 阅读进度同步协议（M3-sync）：/users/**、/syncs/**、/healthcheck 挂根路径 -->
+        <dependency>
+            <groupId>com.bifrost</groupId>
+            <artifactId>kosync-server</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
