@@ -107,8 +107,9 @@ OPDS feed/entry id 用 `urn:bifrost:...` 形式（`urn:bifrost:opds:catalog` / `
 **Opedia Publisher（opds-publisher 模块）**:
 v2 mini-milestone 在 `bifrost-adapter/opds-publisher`（v1 时为占位）实装；Controller `OpdsController`（`@RequestMapping("/opds/v1.2")`）走 Spring MVC，XML 模板用 string template 手拼（**不引入** ROME 等 Atom 库），用户输入字段统一 `StringEscapeUtils.escapeXml11`。
 
-**KOSync（v2 已知未实现）**:
-KOReader 阅读进度同步协议（`/users/create`、`/users/auth`、`PUT /syncs/progress`、`GET /syncs/progress/:document` + `x-auth-user` / `x-auth-key` 头 + `Accept: application/vnd.koreader.v1+json`）；**Day-one 不实现**——端点不挂、客户端"Progress sync"功能连不到本服务，调研档 `doc/m2-book/调研/01-KOReader生态与OPDS.md` §一 保留作为协议理解存档，未来单独建 `bifrost-adapter/kosync-server` 模块时复用。**此条作为边界标记，避免后续里程碑接手的人误以为接口也要做。**
+**KOSync（M3-sync 实装）**:
+KOReader 阅读进度同步协议（`/users/create`、`/users/auth`、`PUT /syncs/progress`、`GET /syncs/progress/:document`、`/healthcheck` + `x-auth-user` / `x-auth-key` 头 + `Accept: application/vnd.koreader.v1+json`）；**本里程碑实装**，模块 `bifrost-adapter/kosync-server`，端点挂根路径。协议只认**文档指纹**、**不认"书"**——Bifrost 用指纹→书映射把它接回图书管理。跨端新旧判断在**客户端**（比对响应 `timestamp`，缺字段时退化为百分比比较），服务端**无条件后写覆盖**：**不返回 202**（调研档 `doc/调研/KOReader图书管理后台调研.md` 里"202 = 旧进度拒绝覆盖"是官方 2016 年已删除的旧行为，客户端收到 202 会判失败并把推送丢回离线队列）。同步内容只有"最后阅读位置"，**不含书签 / 高亮 / 笔记 / 阅读时长**。
+_Avoid_: 图书同步（会被读成同步图书文件，那是 OPDS / WebDAV 的事）、进度同步（裸词——"阅读进度"才是模型名词）
 
 **ID 前缀（Subsonic 端）**:
 ar-（艺术家）/ al-（专辑）/ tr-（曲目）/ pl-（歌单）+ 数字主键。
@@ -118,6 +119,28 @@ ar-（艺术家）/ al-（专辑）/ tr-（曲目）/ pl-（歌单）+ 数字主
 
 **管理端工程（Vue Dashboard）**:
 管理端（登录页/登录态/过期时间等前端逻辑）位于本仓库的**兄弟目录** `../bifrost-dashboard`（相对本仓库根目录，勿记绝对路径）；后端仅提供 `/api/**` 契约，登录过期等需求改动落在该工程（见其 `docs/adr/0002-auth-model.md`）。
+
+## 阅读进度同步
+
+**阅读进度（Reading Progress）**:
+某个**同步账号**在某本书上的最后阅读位置：百分比 + 位置字符串（重排版书的位置串是阅读器私有形态，跨阅读器不可移植；只有百分比可移植）+ 设备标识 + 服务端记录时间。**只有"最后位置"**，不含书签 / 高亮 / 笔记 / 阅读时长。
+_Avoid_: 书籍进度、图书同步、同步记录（记录是存储形态，不是模型名词）
+
+**文档指纹（Document Fingerprint）**:
+客户端为"我手上这份文件"算出的 32 位十六进制标识，KOSync 用它代替书目身份（默认对文件内容非均匀采样取 MD5，可切换为对文件名取 MD5）。与**指纹**（`path + size + mtime`，扫描侧的变更检测标记）是**两套完全不同的东西**，不可互相替代。
+_Avoid_: 指纹（那是扫描侧概念）、哈希、MD5、checksum
+
+**同步账号（Sync Account）**:
+阅读进度同步的凭据主体：用户名 + 口令；口令在客户端侧先做 MD5 再当凭据传输，**与管理员账号相互独立**（管理员口令不交给阅读设备）。阅读进度按同步账号隔离。
+_Avoid_: KOSync 用户（协议层叫法）、设备（设备不是凭据主体，多台设备共用一个同步账号）
+
+**孤儿进度（Orphan Progress）**:
+收到了阅读进度、但其**文档指纹**匹配不到任何图书的记录（侧载文件、重打包、未入库文件等）。首次遇到未匹配的指纹会**触发一次图书扫描**（给"书还没入库"留一次机会）；扫描后仍未匹配即**固定为孤儿**——不再自动重试匹配，**保留不丢**，管理端可见，只能人工绑定到某本书或忽略。
+_Avoid_: 未知进度、无效进度（孤儿是正常状态，不是错误）
+
+**设备（Sync Device）**:
+携带**同步账号**凭据上报阅读进度的阅读器实例，由客户端自己生成的 `device_id` 标识（同名不合并）；设备名是客户端可改的自由文本。协议层没有设备注册，只有随每次上报捎带的标识——管理端的设备列表是"见到过并记录下来的设备"。
+_Avoid_: 客户端（太泛）、终端、阅读器（设备指实例，不是机型）
 
 ## 账号
 
