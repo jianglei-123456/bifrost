@@ -109,7 +109,7 @@ class BookScanServiceTest {
         r2.setMediaType(MediaType.MUSIC);
         when(libraryRootRepository.findById(2L)).thenReturn(Optional.of(r2));
         BizException ex = assertThrows(BizException.class, () -> service.scanRoot(2L));
-        assertTrue(ex.getMessage().contains("不是图书类型"));
+        assertTrue(ex.getMessage().contains("非图书类型"));
     }
 
     @Test
@@ -119,7 +119,7 @@ class BookScanServiceTest {
         r.setMediaType(MediaType.MUSIC);
         when(libraryRootRepository.findById(2L)).thenReturn(Optional.of(r));
         BizException ex = assertThrows(BizException.class, () -> service.scanRoot(2L));
-        assertTrue(ex.getMessage().contains("不是图书类型"));
+        assertTrue(ex.getMessage().contains("非图书类型"));
     }
 
     @Test
@@ -137,7 +137,21 @@ class BookScanServiceTest {
         newService();
         when(libraryRootRepository.findById(99L)).thenReturn(Optional.empty());
         BizException ex = assertThrows(BizException.class, () -> service.scanRoot(99L));
-        assertTrue(ex.getMessage().contains("库根不存在"));
+        assertTrue(ex.getMessage().contains("图书目录不存在"));
+    }
+
+    @Test
+    void scanRootResetsScanningWhenScanBodyThrows(@TempDir Path libDir) {
+        newService();
+        LibraryRoot r = bookRoot(libDir, 21L);
+        when(libraryRootRepository.findById(21L)).thenReturn(Optional.of(r));
+        when(libraryRootRepository.save(any(LibraryRoot.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(bookRepository.findByLibraryRootId(21L)).thenThrow(new IllegalStateException("boom"));
+
+        assertThrows(IllegalStateException.class, () -> service.scanRoot(21L));
+
+        // 状态机不变量：扫描主体抛异常后不得停留在 SCANNING（否则管理端扫描入口永久禁用）
+        assertEquals(ScanStatus.IDLE, r.getScanStatus());
     }
 
     @Test
@@ -241,7 +255,7 @@ class BookScanServiceTest {
         when(libraryRootRepository.save(any(LibraryRoot.class))).thenAnswer(inv -> inv.getArgument(0));
         when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // 库根目录为空，但 dbIndex 有一条 Book → 标记为 missing
+        // 图书目录为空，但 dbIndex 有一条 Book → 标记为 missing
         Book stale = new Book();
         stale.setFilePath(libDir.resolve("gone.epub").toAbsolutePath().normalize().toString());
         stale.setIsAvailable(true);

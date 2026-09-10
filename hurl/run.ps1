@@ -43,7 +43,7 @@ try {
     $base = "http://localhost:$Port"
     & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'setup.hurl')
     if ($LASTEXITCODE -ne 0) { throw 'setup.hurl failed' }
-    # OPDS 在 api/rest 之前：先建好 BOOK 库根 + 扫描，让 /api/books + /api/book-roots 列表非空
+    # OPDS 在 api/rest 之前：先建好图书目录 + 扫描，让 /api/books + /api/book-roots 列表非空
     if (Test-Path (Join-Path $PSScriptRoot 'opds')) {
         & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'opds')
         if ($LASTEXITCODE -ne 0) { throw 'opds contract tests failed' }

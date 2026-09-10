@@ -1,7 +1,7 @@
 package com.bifrost.core.event;
 
 /**
- * 扫描统计（ScanCompletedEvent 载荷）。
+ * 扫描统计（音乐与图书扫描共用载荷：MusicScanCompletedEvent / BookScanCompletedEvent）。
  *
  * <p>见《通用功能说明》§12：新增/更新/缺失/错误数。</p>
  */

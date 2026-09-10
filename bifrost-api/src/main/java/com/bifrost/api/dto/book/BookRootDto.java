@@ -7,7 +7,7 @@ import com.bifrost.domain.enums.ScanStatus;
 import java.time.Instant;
 
 /**
- * 图书库根 DTO（与 music LibraryRoot 共享 entity；仅展示用，不复写 API）。
+ * 图书目录 DTO（与 music LibraryRoot 共享 entity；仅展示用，不复写 API）。
  */
 public record BookRootDto(
         Long id,

@@ -19,7 +19,7 @@ import java.util.List;
  * <p>{@code ddl-auto: update} 在添加 {@code NOT NULL} 列到含数据的旧表时不会自动填默认值，
  * 这里在 H2/SQLite 上做一次显式 UPDATE。所有现有库根归 MUSIC（默认）。</p>
  *
- * <p>顺序：在 {@link com.bifrost.core.audio.ScanStateResetRunner} 之前完成回填，
+ * <p>顺序：在 {@link com.bifrost.core.audio.MusicScanStateResetRunner} 之前完成回填，
  * 以免 SCANNING 检测到 mediaType 异常。</p>
  */
 @Slf4j

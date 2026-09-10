@@ -58,7 +58,7 @@ curl http://localhost:18080/opds/v1.2/catalog # → Atom OPDS navigation feed（
 
 ### 图书库使用流程
 
-1. 在管理 REST 创建 BOOK 根（`POST /api/book-roots`，`mediaType=BOOK`）；
+1. 在管理 REST 创建图书目录（`POST /api/book-roots`，`mediaType=BOOK`）；
 2. 触发扫描（`POST /api/book-roots/{id}/scan`），从 EPUB/PDF 解析元数据入库；
 3. KOReader 添加 OPDS catalog：`http://<host>:18080/opds/v1.2/catalog`；Readest 同上（**填完整路径**，不是 `/opds`；分客户端步骤见操作手册 [04](doc/操作手册/04-连接阅读器客户端.md)）；
 4. 客户端可浏览 / 搜索 / 下载（KOReader EPUBC；Readest EPUB + PDF）；
@@ -87,9 +87,9 @@ BIFROST_AUTH_INITIAL_PASSWORD=yourpass docker compose up -d
 | 文档 | 说明 |
 | --- | --- |
 | [操作手册 · 总览](doc/操作手册/00-总览.md) | 手册目录与三分钟快速上手 |
-| [操作手册 · 安装与启动](doc/操作手册/01-安装与启动.md) | 构建启动、初始密码、配置库根与扫描、备份 |
+| [操作手册 · 安装与启动](doc/操作手册/01-安装与启动.md) | 构建启动、初始密码、配置音乐目录与扫描、备份 |
 | [操作手册 · 连接 Subsonic 客户端](doc/操作手册/02-连接Subsonic客户端.md) | **客户端连接指南：服务器地址 / 用户名 / 密码怎么填**（Feishin、DSub、Symfonium 等） |
-| [操作手册 · 连接阅读器客户端](doc/操作手册/04-连接阅读器客户端.md) | **阅读器（Readest / KOReader）经 OPDS 连接 Bifrost 书库**：建 BOOK 库根与扫描、地址怎么填、分客户端步骤 |
+| [操作手册 · 连接阅读器客户端](doc/操作手册/04-连接阅读器客户端.md) | **阅读器（Readest / KOReader）经 OPDS 连接 Bifrost 书库**：建图书目录与扫描、地址怎么填、分客户端步骤 |
 | [操作手册 · 常见问题](doc/操作手册/03-常见问题.md) | 连不上、认证失败 40、密码忘记、OPDS 404 等 FAQ |
 | [项目整体功能说明](doc/功能设计/项目整体功能说明.md) | 产品定位、场景、功能地图、里程碑 |
 | [通用功能说明](doc/功能设计/通用功能说明.md) | 配置/日志/认证/持久化/REST 约定等公共能力 |

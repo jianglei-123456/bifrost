@@ -5,12 +5,13 @@ import com.bifrost.common.util.FileIO;
 import com.bifrost.common.util.Fingerprint;
 import com.bifrost.core.audio.model.TagResult;
 import com.bifrost.core.config.BifrostProperties;
-import com.bifrost.core.event.ScanCompletedEvent;
+import com.bifrost.core.event.MusicScanCompletedEvent;
 import com.bifrost.core.event.ScanStats;
 import com.bifrost.domain.entity.Album;
 import com.bifrost.domain.entity.Artist;
 import com.bifrost.domain.entity.LibraryRoot;
 import com.bifrost.domain.entity.Track;
+import com.bifrost.domain.enums.MediaType;
 import com.bifrost.domain.enums.ScanStatus;
 import com.bifrost.domain.repo.BookmarkRepository;
 import com.bifrost.domain.repo.LibraryRootRepository;
@@ -41,15 +42,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 扫描引擎（全局单扫描互斥、指纹增量、批事务）。
+ * 音乐扫描引擎（全局单扫描互斥、指纹增量、批事务）。
  *
- * <p>见《音乐管理技术设计》§4：遍历库根 → 指纹比对 → 解析入库 → 聚合刷新 → 发布 ScanCompletedEvent。
- * 同一时刻全局只允许一个扫描（手动/定时/Subsonic 触发共用，后到者抛"扫描进行中"）。</p>
+ * <p>见《音乐管理技术设计》§4：遍历音乐目录 → 指纹比对 → 解析入库 → 聚合刷新 → 发布
+ * {@link MusicScanCompletedEvent}。同一时刻全局只允许一个扫描（手动 / Subsonic 触发共用，
+ * 后到者抛"扫描进行中"）。只处理 {@link MediaType#MUSIC} 的音乐目录（ADR-0005）。</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ScanService {
+public class MusicScanService {
 
     private final LibraryRootRepository libraryRootRepository;
     private final TrackRepository trackRepository;
@@ -64,24 +66,25 @@ public class ScanService {
 
     private final ReentrantLock globalLock = new ReentrantLock();
 
-    /** 扫描全部启用库根（串行，增量：指纹一致跳过）。 */
+    /** 扫描全部启用的音乐目录（串行，增量：指纹一致跳过）。 */
     public ScanStats scanAll() {
         return scanAll(false);
     }
 
     /**
-     * 扫描全部启用库根（串行）。
+     * 扫描全部启用的音乐目录（串行）。
+     *
+     * <p>只取 {@link MediaType#MUSIC} 且启用的根：图书目录由 {@code BookScanService} 独立扫描
+     * （ADR-0004 物理隔开）。旧实现遍历全部根，会把图书目录交给音频解析器并覆写其扫描状态。</p>
      *
      * @param force true=强制全量重解析（忽略指纹跳过，重读全部标签——用于回填歌词等新字段/修正元数据）；
      *              false=增量（仅解析新增/变更文件）
      */
     public ScanStats scanAll(boolean force) {
-        List<LibraryRoot> roots = libraryRootRepository.findAllByOrderByIdAsc();
+        List<LibraryRoot> roots =
+                libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType.MUSIC);
         int added = 0, updated = 0, missing = 0, error = 0;
         for (LibraryRoot root : roots) {
-            if (!Boolean.TRUE.equals(root.getEnabled())) {
-                continue;
-            }
             ScanStats s = scanRoot(root.getId(), force);
             added += s.added();
             updated += s.updated();
@@ -91,41 +94,53 @@ public class ScanService {
         return new ScanStats(added, updated, missing, error);
     }
 
-    /** 扫描单个库根（增量）；扫描进行中抛 {@link BizException}（1100）。 */
+    /** 扫描单个音乐目录（增量）；扫描进行中抛 {@link BizException}（1100）。 */
     public ScanStats scanRoot(Long rootId) {
         return scanRoot(rootId, false);
     }
 
-    /** 扫描单个库根；force=true 全量重解析；扫描进行中抛 {@link BizException}（1100）。 */
+    /** 扫描单个音乐目录；force=true 全量重解析；扫描进行中抛 {@link BizException}（1100）。 */
     public ScanStats scanRoot(Long rootId, boolean force) {
         if (!globalLock.tryLock()) {
             throw BizException.scanInProgress("扫描进行中");
         }
         try {
             LibraryRoot root = libraryRootRepository.findById(rootId)
-                    .orElseThrow(() -> BizException.notFound("库根不存在: " + rootId));
+                    .orElseThrow(() -> BizException.notFound("音乐目录不存在: " + rootId));
+            if (root.getMediaType() != MediaType.MUSIC) {
+                throw BizException.paramError("该目录非音乐类型: " + root.getName());
+            }
             if (!Boolean.TRUE.equals(root.getEnabled())) {
-                throw BizException.paramError("库根已禁用: " + root.getName());
+                throw BizException.paramError("音乐目录已禁用: " + root.getName());
             }
             root.setScanStatus(ScanStatus.SCANNING);
             libraryRootRepository.save(root);
-            ScanStats stats = scanLibraryRoot(root, force);
+            ScanStats stats;
+            try {
+                stats = scanLibraryRoot(root, force);
+            } catch (RuntimeException e) {
+                // 扫描主体抛异常时必须把状态清回 IDLE：否则该目录永远停在 SCANNING，
+                // /scan/status 一直报 scanning=true，管理端扫描入口被禁用直到进程重启。
+                root.setScanStatus(ScanStatus.IDLE);
+                libraryRootRepository.save(root);
+                throw e;
+            }
             root.setScanStatus(ScanStatus.IDLE);
             root.setLastScanAt(Instant.now());
             root.setLastScanStats(toJson(stats));
             libraryRootRepository.save(root);
-            eventPublisher.publishEvent(new ScanCompletedEvent(root.getId(), stats));
+            eventPublisher.publishEvent(new MusicScanCompletedEvent(root.getId(), stats));
             return stats;
         } finally {
             globalLock.unlock();
         }
     }
 
-    /** 单库根扫描主体。 */
+    /** 单音乐目录扫描主体。 */
     private ScanStats scanLibraryRoot(LibraryRoot root, boolean force) {
         Path dir = Path.of(root.getPath());
         if (!Files.isDirectory(dir)) {
-            log.warn("库根目录不存在，跳过扫描: {}", root.getPath());
+            log.warn("音乐目录不存在，跳过扫描: {}", root.getPath());
             return new ScanStats(0, 0, 0, 1);
         }
         Map<String, Track> dbIndex = trackRepository.findByLibraryRootId(root.getId()).stream()
@@ -143,7 +158,7 @@ public class ScanService {
                     .sorted()
                     .toList();
         } catch (IOException e) {
-            throw new UncheckedIOException("遍历库根失败: " + root.getPath(), e);
+            throw new UncheckedIOException("遍历音乐目录失败: " + root.getPath(), e);
         }
 
         for (Path file : files) {
@@ -194,7 +209,7 @@ public class ScanService {
         // 聚合刷新（仅本次涉及专辑）
         aggregationService.refreshAlbumAggregates(affectedAlbums);
 
-        log.info("扫描完成: root={} added={} updated={} missing={} error={}",
+        log.info("音乐扫描完成: root={} added={} updated={} missing={} error={}",
                 root.getName(), counters.added, counters.updated, counters.missing, counters.error);
         return new ScanStats(counters.added, counters.updated, counters.missing, counters.error);
     }

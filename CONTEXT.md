@@ -9,18 +9,26 @@ Bifrost 是家庭媒体库管理平台：统一管理音频（音乐）/视频/�
 _Avoid_: 媒体格式
 
 **库根（LibraryRoot）**:
-一个挂载进媒体库的顶层目录，对应 Subsonic 的 musicFolder / OPDS 的 book 集合；可启用/禁用，禁用不参与扫描且其媒体对客户端隐藏；带 `mediaType` 列隔离 MUSIC/BOOK 两种类型的根（v1 历史数据默认 MUSIC，v2 启动时一次性 UPDATE 回填）。
-_Avoid_: 媒体目录、音乐文件夹、路径配置
+共享持久化概念：`library_root` 表的一行 = 一个挂载进媒体库的顶层目录，对应 Subsonic 的 musicFolder / OPDS 的 book 集合；可启用/禁用，禁用不参与扫描且其媒体对客户端隐藏；带 `mediaType` 列隔离 MUSIC/BOOK 两种类型的根（v1 历史数据默认 MUSIC，v2 启动时一次性 UPDATE 回填）。管理面按媒体类型称呼为**音乐目录** / **图书目录**；`LibraryRoot` 实体与 `library_root` 表**刻意保留普适名**——它是两种媒体唯一共享的持久化类型（ADR-0004、ADR-0005）。
+_Avoid_: 音乐库根、图书库根、音乐文件夹、路径配置
+
+**音乐目录（MusicRoot）**:
+管理面对「MUSIC 类型库根」的称呼：`/api/music-roots` 管理的一个挂载目录（名称 + 绝对路径 + 启停），其下的音频文件由 `MusicScanService` 扫描为曲目。管理页面叫「音乐库」。
+_Avoid_: 音乐库根、音乐文件夹
+
+**图书目录（BookRoot）**:
+管理面对「BOOK 类型库根」的称呼：`/api/book-roots` 管理的一个挂载目录，其下的 EPUB/PDF 由 `BookScanService` 扫描为图书。管理页面叫「图书库」。
+_Avoid_: 图书库根、图书文件夹
 
 **图书（Book）**:
-一个电子文件及其解析出的元数据记录；归属某个 BOOK 类型的库根；每书一文件（`book.filePath` unique），不复用音乐侧 Track/Album/Artist 三层聚合（见 ADR-0004）。
+一个电子文件及其解析出的元数据记录；归属某个图书目录（BOOK 类型的库根）；每书一文件（`book.filePath` unique），不复用音乐侧 Track/Album/Artist 三层聚合（见 ADR-0004）。
 _Avoid_: 图书文件（图书指库内记录，文件指磁盘对象）
 
 **Book 字段集（v2 Day-one）**: title / authors（多作者用 " & " 拼接，Calibre 同款）/ language / publisher / pubDate（仅年份）/ description / subject（"; " 拼接）/ identifier / series / seriesIndex / rights / format（EPUB|PDF）/ extension（epub|pdf|kepub.epub）/ filePath / fileSize / fileLastModified / fingerprint（path+size+mtime）/ coverSource（EMBEDDED|UPLOADED|null）/ isAvailable / libraryRootId / starredAt（v2 字段保留，REST 暂不暴露写入）/ rating（同上）。**没有** Author 实体、Series 实体、BookFile 子表。
 _Avoid_: 音频曲目、BookFile（不存在）
 
 **曲目（Track）**:
-一个媒体文件及其解析出的元数据记录；归属某个库根与至多一个专辑。
+一个媒体文件及其解析出的元数据记录；归属某个音乐目录（MUSIC 类型的库根）与至多一个专辑。
 _Avoid_: 歌曲文件（曲目指库内记录，文件指磁盘对象）
 
 **艺术家（Artist）**:
@@ -28,7 +36,7 @@ _Avoid_: 歌曲文件（曲目指库内记录，文件指磁盘对象）
 _Avoid_: 歌手、表演者
 
 **专辑（Album）**:
-曲目的聚合实体，由专辑键（规范化专辑艺术家 + 规范化标题）确定；跨库根全局合并，数据库不设唯一约束，由扫描逻辑保证不重复。
+曲目的聚合实体，由专辑键（规范化专辑艺术家 + 规范化标题）确定；跨音乐目录全局合并，数据库不设唯一约束，由扫描逻辑保证不重复。
 _Avoid_: 唱片、唱片集
 
 **未知艺术家（Unknown Artist）**:
@@ -54,11 +62,11 @@ _Avoid_: 拼音索引（拼音只是计算手段）
 ## 扫描与数据生命周期
 
 **扫描（Scan）**:
-遍历库根文件系统、解析元数据、构建/更新媒体索引的过程；**每个媒体类型独立**——`ScanService`（MUSIC）与 `BookScanService`（BOOK）各持独立 ReentrantLock，互不干扰；同一类型内全局同一时刻只允许一个扫描运行。
+遍历音乐目录 / 图书目录的文件系统、解析元数据、构建/更新媒体索引的过程；**每个媒体类型独立**——`MusicScanService`（MUSIC）与 `BookScanService`（BOOK）各持独立 ReentrantLock，互不干扰；同一类型内全局同一时刻只允许一个扫描运行。
 _Avoid_: 刷新、重建
 
 **图书扫描器（BookScanService）**:
-v2 mini-milestone 引入，独立于 `ScanService`；路由表 = `BookParserRegistry`（按扩展名 `epub|kepub.epub|pdf` 派发 `EpubBookParser` / `PdfBookParser`）；批大小 200（`TransactionTemplate`）；增量按 fingerprint 跳过；缺失文件 `isAvailable=false`（保留记录，文件丢失）；`force=true` 时缺失的旧 Book → DELETE（**不级联引用，Day-one 一书一文件无引用关系**）；完成后发 `BookScanCompletedEvent`（预留 opds-publisher 缓存失效钩子，Day-one 无消费者）。
+v2 mini-milestone 引入，独立于 `MusicScanService`；路由表 = `BookParserRegistry`（按扩展名 `epub|kepub.epub|pdf` 派发 `EpubBookParser` / `PdfBookParser`）；批大小 200（`TransactionTemplate`）；增量按 fingerprint 跳过；缺失文件 `isAvailable=false`（保留记录，文件丢失）；`force=true` 时缺失的旧 Book → DELETE（**不级联引用，Day-one 一书一文件无引用关系**）；完成后发 `BookScanCompletedEvent`（预留 opds-publisher 缓存失效钩子，Day-one 无消费者）。
 
 **指纹（Fingerprint）**:
 文件变更检测标记 = 路径 + 文件大小 + 最后修改时间；指纹一致则跳过解析。音乐与图书共用同一 `Fingerprint.of(path, size, mtime)`。
@@ -106,7 +114,7 @@ KOReader 阅读进度同步协议（`/users/create`、`/users/auth`、`PUT /sync
 ar-（艺术家）/ al-（专辑）/ tr-（曲目）/ pl-（歌单）+ 数字主键。
 
 **管理 REST（/api/**）**:
-管理契约端点集，供另一项目的 Vue Dashboard 消费；v2 增补 `/api/book-roots` 与 `/api/books`（详见 `doc/m2-book/task/03-管理REST.md`）；v1 端点（`/api/artists` / `/api/albums` / `/api/tracks` / `/api/scan` 等）**不混**——v2 图书侧端点独立路径。
+管理契约端点集，供另一项目的 Vue Dashboard 消费；**根与扫描端点按媒体类型独立路径**（ADR-0005）：音乐侧 `/api/music-roots`（含 `/scan/all`、`/scan/status`），图书侧 `/api/book-roots`（含 `/scan/all`、`/scan/status`，详见 `doc/m2-book/task/03-管理REST.md`）；音乐浏览端点（`/api/artists` / `/api/albums` / `/api/tracks` / `/api/playlists` / `/api/search`）与图书浏览端点（`/api/books`）各自独立、互不混用。两侧共享的库根行由 `mediaType` 列隔离。
 
 **管理端工程（Vue Dashboard）**:
 管理端（登录页/登录态/过期时间等前端逻辑）位于本仓库的**兄弟目录** `../bifrost-dashboard`（相对本仓库根目录，勿记绝对路径）；后端仅提供 `/api/**` 契约，登录过期等需求改动落在该工程（见其 `docs/adr/0002-auth-model.md`）。

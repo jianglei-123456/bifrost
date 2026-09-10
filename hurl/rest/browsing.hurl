@@ -6,6 +6,8 @@ HTTP 200
 root_id: jsonpath "$['subsonic-response'].musicFolders.musicFolder[0].id"
 [Asserts]
 jsonpath "$['subsonic-response'].musicFolders.musicFolder[0].name" contains "测试库"
+# 只暴露 MUSIC 目录：图书目录（opds/setup 已建"测试图书库"）不得出现在音乐文件夹里
+jsonpath "$['subsonic-response'].musicFolders.musicFolder" count == 1
 
 # getIndexes：字母分组（周杰伦→Z；未知艺术家→#）
 GET {{base_url}}/rest/getIndexes.view?u=admin&p=testpass&v=1.16.1&c=hurl&f=json

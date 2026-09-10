@@ -216,11 +216,18 @@ class AuthIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
                 .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")));
-        mockMvc.perform(options("/api/scan")
+        mockMvc.perform(options("/api/music-roots/scan/all")
                         .header("Origin", "http://localhost:5173")
                         .header("Access-Control-Request-Method", "POST"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+        // PATCH 预检：目录部分更新端点（/api/music-roots/{id}、/api/book-roots/{id}）依赖它
+        mockMvc.perform(options("/api/music-roots/1")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "PATCH"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("PATCH")));
     }
 
     private static String basic(String username, String password) {

@@ -198,7 +198,7 @@ public class CoverService {
         }
     }
 
-    /** 清除全部缩略图缓存（ScanCompletedEvent 订阅：封面可能已更新）。 */
+    /** 清除全部缩略图缓存（MusicScanCompletedEvent 订阅：封面可能已更新）。 */
     public void invalidateAllThumbnails() {
         try {
             Path dir = coverCacheDir();

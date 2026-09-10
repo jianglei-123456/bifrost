@@ -4,8 +4,8 @@
 
 ## 目录
 
-- `setup.hurl`：初始化（创建库根 + 扫描样本库）
-- `api/*.hurl`：管理 REST（/api/**）契约
+- `setup.hurl`：初始化（创建音乐目录 + 扫描样本库）
+- `api/*.hurl`：管理 REST（`/api/music-roots`、`/api/book-roots`、`/api/books` 等）契约
 - `rest/*.hurl`：Subsonic（/rest/**）契约
 
 ## 运行

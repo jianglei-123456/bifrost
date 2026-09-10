@@ -26,6 +26,7 @@ import java.util.Base64;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,20 +86,20 @@ class ManagementApiIntegrationTest {
     @Test
     void fullScanParamForcesReParse() throws Exception {
         String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
-        mockMvc.perform(post("/api/library-roots")
+        mockMvc.perform(post("/api/music-roots")
                         .header("Authorization", BASIC).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"测试库\",\"path\":\"" + rootPath + "\",\"enabled\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
-        Long rootId = rootIdFromList();
-        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan").header("Authorization", BASIC))
+        Long rootId = musicRootIdFromList();
+        mockMvc.perform(post("/api/music-roots/" + rootId + "/scan").header("Authorization", BASIC))
                 .andExpect(jsonPath("$.data.added").value(4));
         // 增量幂等
-        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan").header("Authorization", BASIC))
+        mockMvc.perform(post("/api/music-roots/" + rootId + "/scan").header("Authorization", BASIC))
                 .andExpect(jsonPath("$.data.added").value(0))
                 .andExpect(jsonPath("$.data.updated").value(0));
         // fullScan=true → 强制全量重解析（指纹一致也重读标签）
-        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan")
+        mockMvc.perform(post("/api/music-roots/" + rootId + "/scan")
                         .param("fullScan", "true").header("Authorization", BASIC))
                 .andExpect(jsonPath("$.data.added").value(0))
                 .andExpect(jsonPath("$.data.updated").value(4))
@@ -106,18 +107,18 @@ class ManagementApiIntegrationTest {
     }
 
     @Test
-    void libraryRootCrudScanAndBrowse() throws Exception {
+    void musicRootCrudScanAndBrowse() throws Exception {
         String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
         // 新增
-        mockMvc.perform(post("/api/library-roots")
+        mockMvc.perform(post("/api/music-roots")
                         .header("Authorization", BASIC).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"测试库\",\"path\":\"" + rootPath + "\",\"enabled\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").isNumber());
-        Long rootId = rootIdFromList();
+        Long rootId = musicRootIdFromList();
         // 触发扫描
-        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan")
+        mockMvc.perform(post("/api/music-roots/" + rootId + "/scan")
                         .header("Authorization", BASIC))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.added").value(4));
@@ -136,12 +137,12 @@ class ManagementApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.artists[0].name").value("周杰伦"));
         // 编辑 + 删除（删除后曲目隐藏）
-        mockMvc.perform(put("/api/library-roots/" + rootId)
+        mockMvc.perform(patch("/api/music-roots/" + rootId)
                         .header("Authorization", BASIC).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"改名库\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value("改名库"));
-        mockMvc.perform(delete("/api/library-roots/" + rootId).header("Authorization", BASIC))
+        mockMvc.perform(delete("/api/music-roots/" + rootId).header("Authorization", BASIC))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
         mockMvc.perform(get("/api/tracks").header("Authorization", BASIC))
@@ -152,12 +153,12 @@ class ManagementApiIntegrationTest {
     @Test
     void playlistsAndAnnotation() throws Exception {
         String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
-        mockMvc.perform(post("/api/library-roots").header("Authorization", BASIC)
+        mockMvc.perform(post("/api/music-roots").header("Authorization", BASIC)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"测试库\",\"path\":\"" + rootPath + "\"}"))
                 .andExpect(status().isOk());
-        Long rootId = rootIdFromList();
-        mockMvc.perform(post("/api/library-roots/" + rootId + "/scan").header("Authorization", BASIC))
+        Long rootId = musicRootIdFromList();
+        mockMvc.perform(post("/api/music-roots/" + rootId + "/scan").header("Authorization", BASIC))
                 .andExpect(status().isOk());
 
         String tracks = mockMvc.perform(get("/api/tracks").header("Authorization", BASIC))
@@ -206,19 +207,19 @@ class ManagementApiIntegrationTest {
         mockMvc.perform(get("/api/albums/999999").header("Authorization", BASIC))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(1001));
-        // 重复库根路径 → 冲突
+        // 重复目录路径 → 冲突
         String rootPath = jsonEscape(musicDir.toAbsolutePath().normalize().toString());
-        mockMvc.perform(post("/api/library-roots").header("Authorization", BASIC)
+        mockMvc.perform(post("/api/music-roots").header("Authorization", BASIC)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"A\",\"path\":\"" + rootPath + "\"}"))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/library-roots").header("Authorization", BASIC)
+        mockMvc.perform(post("/api/music-roots").header("Authorization", BASIC)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"B\",\"path\":\"" + rootPath + "\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1004));
-        // 扫描不存在库根 → 404
-        mockMvc.perform(post("/api/library-roots/999999/scan").header("Authorization", BASIC))
+        // 扫描不存在的音乐目录 → 404
+        mockMvc.perform(post("/api/music-roots/999999/scan").header("Authorization", BASIC))
                 .andExpect(status().isNotFound());
     }
 
@@ -226,9 +227,9 @@ class ManagementApiIntegrationTest {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private Long rootIdFromList() throws Exception {
+    private Long musicRootIdFromList() throws Exception {
         var om = new com.fasterxml.jackson.databind.ObjectMapper();
-        String list = mockMvc.perform(get("/api/library-roots").header("Authorization", BASIC))
+        String list = mockMvc.perform(get("/api/music-roots").header("Authorization", BASIC))
                 .andReturn().getResponse().getContentAsString();
         return om.readTree(list).get("data").get(0).get("id").asLong();
     }

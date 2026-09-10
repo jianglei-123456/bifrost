@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 图书库根管理 REST（M2-book，{@code doc/m2-book/task/03-管理REST.md} T3.2）。
+ * 图书目录管理 REST（M2-book，{@code doc/m2-book/task/03-管理REST.md} T3.2）。
  *
- * <p>物理隔开自 {@code LibraryRootController}：仅处理 {@link MediaType#BOOK} 库根；
+ * <p>物理隔开自 {@code MusicRootController}：仅处理 {@link MediaType#BOOK} 图书目录；
  * 扫描触发走 {@link BookScanService}（独立 ReentrantLock）；删除时级联隐藏 {@link Book} 记录。</p>
  */
 @Slf4j
@@ -48,14 +48,14 @@ public class BookRootController {
     private final BookScanService bookScanService;
 
     /**
-     * 列出 BOOK 库根（含停用，ID 升序）。
+     * 列出图书目录（含停用，ID 升序）。
      *
      * <p>停用根一并返回：管理端列表需展示"启用"开关（Q25），停用后可再启用；
      * 扫描/状态读仍只取启用根（{@code EnabledTrue}），此处不设 enabled 过滤。</p>
      */
     @GetMapping
     public ApiResponse<List<BookRootDto>> list() {
-        // 强制 BOOK 过滤；不允许通过 URL 改查 music（与 /api/library-roots 物理隔开）
+        // 强制 BOOK 过滤；不允许通过 URL 改查 music（与 /api/music-roots 物理隔开）
         List<BookRootDto> items = libraryRootRepository.findByMediaTypeOrderByIdAsc(MediaType.BOOK)
                 .stream()
                 .map(BookRootDto::of)
@@ -63,16 +63,16 @@ public class BookRootController {
         return ApiResponse.ok(items);
     }
 
-    /** 新建 BOOK 库根 */
+    /** 新建图书目录 */
     @PostMapping
     public ApiResponse<BookRootDto> create(@RequestBody BookRootRequest req) {
         String name = Strings.trimToNull(req.name());
         String path = Strings.trimToNull(req.path());
         if (name == null || path == null) {
-            throw BizException.paramError("库根名称与路径不能为空");
+            throw BizException.paramError("图书目录名称与路径不能为空");
         }
         if (libraryRootRepository.findByPath(path).isPresent()) {
-            throw BizException.conflict("库根路径已存在: " + path);
+            throw BizException.conflict("路径已被其他目录占用: " + path);
         }
         LibraryRoot root = new LibraryRoot();
         root.setName(name);
@@ -100,7 +100,7 @@ public class BookRootController {
             libraryRootRepository.findByPath(newPath)
                     .filter(other -> !other.getId().equals(id))
                     .ifPresent(other -> {
-                        throw BizException.conflict("库根路径已存在: " + newPath);
+                        throw BizException.conflict("路径已被其他目录占用: " + newPath);
                     });
             root.setPath(newPath);
         }
@@ -159,7 +159,7 @@ public class BookRootController {
             }
         });
         return ApiResponse.ok(new ScanTriggerView("SCANNING", null,
-                "已启动 " + roots.size() + " 个图书库根扫描"));
+                "已启动 " + roots.size() + " 个图书目录扫描"));
     }
 
     /**
@@ -186,9 +186,9 @@ public class BookRootController {
 
     private LibraryRoot requireBookRoot(Long id) {
         LibraryRoot r = libraryRootRepository.findById(id)
-                .orElseThrow(() -> BizException.notFound("库根不存在: " + id));
+                .orElseThrow(() -> BizException.notFound("图书目录不存在: " + id));
         if (r.getMediaType() != MediaType.BOOK) {
-            throw BizException.paramError("库根非图书类型: " + id);
+            throw BizException.paramError("该目录非图书类型: " + r.getName());
         }
         return r;
     }

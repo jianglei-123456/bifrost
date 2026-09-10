@@ -39,8 +39,8 @@ import java.util.stream.Stream;
 /**
  * 图书扫描引擎（M2-book，{@code doc/m2-book/task/01-图书核心.md} T1.3）。
  *
- * <p>与 {@code ScanService} 物理隔开：独立 {@link ReentrantLock}（未来允许图书与音乐并行扫描，
- * ADR-0004）；仅扫描 {@link MediaType#BOOK} 库根；批事务 200 文件/批；
+ * <p>与 {@code MusicScanService} 物理隔开：独立 {@link ReentrantLock}（未来允许图书与音乐并行扫描，
+ * ADR-0004）；仅扫描 {@link MediaType#BOOK} 图书目录；批事务 200 文件/批；
  * 不聚合（Book 单层，无 Album/Artist，Q3-B 决策）。
  * 解析异常 → {@link BookResult#fallback}，绝不抛。</p>
  */
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class BookScanService {
 
-    /** 图书扫描互斥锁（与 ScanService 独立；未来允许同时扫图书与音乐） */
+    /** 图书扫描互斥锁（与 MusicScanService 独立；未来允许同时扫图书与音乐） */
     private final ReentrantLock bookScanLock = new ReentrantLock();
 
     private final LibraryRootRepository libraryRootRepository;
@@ -60,13 +60,13 @@ public class BookScanService {
     private final PlatformTransactionManager transactionManager;
     private final BifrostProperties properties;
 
-    /** 扫描所有启用的图书库根（增量） */
+    /** 扫描所有启用的图书目录（增量） */
     public ScanStats scanAll() {
         return scanAll(false);
     }
 
     /**
-     * 扫描所有启用的图书库根（串行）。
+     * 扫描所有启用的图书目录（串行）。
      *
      * @param force true=强制全量重解析（重读所有元数据）；false=增量（指纹一致跳过）
      */
@@ -83,17 +83,17 @@ public class BookScanService {
         return new ScanStats(added, updated, missing, error);
     }
 
-    /** 扫描单个库根（增量） */
+    /** 扫描单个图书目录（增量） */
     public ScanStats scanRoot(Long rootId) {
         return scanRoot(rootId, false);
     }
 
     /**
-     * 扫描单个库根（必须为 {@link MediaType#BOOK} 类型）。
+     * 扫描单个图书目录（必须为 {@link MediaType#BOOK} 类型）。
      *
      * @param force true=全量重解析；false=增量
-     * @throws com.bifrost.common.exception.BizException 1100 扫描进行中；1001 库根不存在；
-     *                                                     1002 库根非 BOOK 类型
+     * @throws com.bifrost.common.exception.BizException 1100 扫描进行中；1001 图书目录不存在；
+     *                                                     1002 目录非 BOOK 类型
      */
     public ScanStats scanRoot(Long rootId, boolean force) {
         if (!bookScanLock.tryLock()) {
@@ -101,16 +101,25 @@ public class BookScanService {
         }
         try {
             LibraryRoot root = libraryRootRepository.findById(rootId)
-                    .orElseThrow(() -> BizException.notFound("库根不存在: " + rootId));
+                    .orElseThrow(() -> BizException.notFound("图书目录不存在: " + rootId));
             if (root.getMediaType() != MediaType.BOOK) {
-                throw BizException.paramError("库根不是图书类型: " + root.getName());
+                throw BizException.paramError("该目录非图书类型: " + root.getName());
             }
             if (!Boolean.TRUE.equals(root.getEnabled())) {
-                throw BizException.paramError("库根已禁用: " + root.getName());
+                throw BizException.paramError("图书目录已禁用: " + root.getName());
             }
             root.setScanStatus(ScanStatus.SCANNING);
             libraryRootRepository.save(root);
-            ScanStats stats = scanLibraryRoot(root, force);
+            ScanStats stats;
+            try {
+                stats = scanLibraryRoot(root, force);
+            } catch (RuntimeException e) {
+                // 与 MusicScanService 同款：异常时必须清回 IDLE，否则图书目录永久停在
+                // SCANNING（异步触发路径会吞掉异常，管理端扫描条将一直显示"扫描中"）。
+                root.setScanStatus(ScanStatus.IDLE);
+                libraryRootRepository.save(root);
+                throw e;
+            }
             root.setScanStatus(ScanStatus.IDLE);
             root.setLastScanAt(Instant.now());
             root.setLastScanStats(toJson(stats));
@@ -122,11 +131,11 @@ public class BookScanService {
         }
     }
 
-    /** 单库根扫描主体 */
+    /** 单图书目录扫描主体 */
     private ScanStats scanLibraryRoot(LibraryRoot root, boolean force) {
         Path dir = Path.of(root.getPath());
         if (!Files.isDirectory(dir)) {
-            log.warn("图书库根目录不存在，跳过扫描: {}", root.getPath());
+            log.warn("图书目录不存在，跳过扫描: {}", root.getPath());
             return new ScanStats(0, 0, 0, 1);
         }
         Map<String, Book> dbIndex = bookRepository.findByLibraryRootId(root.getId()).stream()
@@ -143,7 +152,7 @@ public class BookScanService {
                     .sorted()
                     .toList();
         } catch (IOException e) {
-            throw new UncheckedIOException("遍历图书库根失败: " + root.getPath(), e);
+            throw new UncheckedIOException("遍历图书目录失败: " + root.getPath(), e);
         }
 
         for (Path file : files) {

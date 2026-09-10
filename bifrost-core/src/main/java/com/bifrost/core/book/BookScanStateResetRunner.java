@@ -11,9 +11,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * 启动时重置残留的图书库根 SCANNING 状态（进程被杀后状态标记残留，与 {@code ScanStateResetRunner} 同模式）。
+ * 启动时重置残留的图书扫描 SCANNING 状态（进程被杀后状态标记残留，与 {@code MusicScanStateResetRunner} 同模式）。
  *
- * <p>仅重置 {@link MediaType#BOOK} 类型库根；音乐库根由 {@code ScanStateResetRunner} 独立处理。</p>
+ * <p>仅重置 {@link MediaType#BOOK} 图书目录；音乐目录由 {@code MusicScanStateResetRunner} 独立处理。</p>
  */
 @Slf4j
 @Component

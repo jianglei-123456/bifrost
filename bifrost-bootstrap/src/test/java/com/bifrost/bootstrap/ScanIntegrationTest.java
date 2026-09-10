@@ -6,7 +6,7 @@ import com.bifrost.core.audio.service.AnnotationService;
 import com.bifrost.core.audio.service.LibraryQueryService;
 import com.bifrost.core.audio.service.PlaylistService;
 import com.bifrost.core.audio.service.ScrobbleService;
-import com.bifrost.core.audio.ScanService;
+import com.bifrost.core.audio.MusicScanService;
 import com.bifrost.core.event.ScanStats;
 import com.bifrost.domain.entity.Album;
 import com.bifrost.domain.entity.Artist;
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ScanIntegrationTest {
 
     @Autowired
-    private ScanService scanService;
+    private MusicScanService musicScanService;
     @Autowired
     private LibraryRootRepository libraryRootRepository;
     @Autowired
@@ -90,7 +90,7 @@ class ScanIntegrationTest {
     void scanCreatesLibraryAndAggregates() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        ScanStats stats = scanService.scanRoot(root.getId());
+        ScanStats stats = musicScanService.scanRoot(root.getId());
 
         assertEquals(4, stats.added());
         List<Track> tracks = trackRepository.findByLibraryRootId(root.getId());
@@ -120,7 +120,7 @@ class ScanIntegrationTest {
         assertTrue(index.stream().anyMatch(g -> g.artists().stream()
                 .anyMatch(a -> a.unknown() && a.name().equals(UnknownArtist.NAME))));
 
-        // 库根状态
+        // 音乐目录状态
         LibraryRoot saved = libraryRootRepository.findById(root.getId()).orElseThrow();
         assertNotNull(saved.getLastScanAt());
         assertNotNull(saved.getLastScanStats());
@@ -130,8 +130,8 @@ class ScanIntegrationTest {
     void rescanIsIdempotent() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        scanService.scanRoot(root.getId());
-        ScanStats second = scanService.scanRoot(root.getId());
+        musicScanService.scanRoot(root.getId());
+        ScanStats second = musicScanService.scanRoot(root.getId());
         assertEquals(0, second.added());
         assertEquals(0, second.updated());
         assertEquals(0, second.missing());
@@ -142,24 +142,24 @@ class ScanIntegrationTest {
     void fullRescanReParsesUnchangedFiles() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        assertEquals(4, scanService.scanRoot(root.getId()).added());
+        assertEquals(4, musicScanService.scanRoot(root.getId()).added());
         // 增量幂等：指纹一致 → 全部跳过
-        assertEquals(0, scanService.scanRoot(root.getId()).updated());
+        assertEquals(0, musicScanService.scanRoot(root.getId()).updated());
         // 强制全量重解析：指纹一致也重读标签（回填歌词等新字段的场景）
-        ScanStats forced = scanService.scanRoot(root.getId(), true);
+        ScanStats forced = musicScanService.scanRoot(root.getId(), true);
         assertEquals(0, forced.added());
         assertEquals(4, forced.updated()); // 每首曲目都被重解析（updated 计数=重解析）
         assertEquals(0, forced.missing());
         assertEquals(4, trackRepository.findByLibraryRootId(root.getId()).size());
         // 强制扫描不破坏指纹，随后增量扫描仍幂等
-        assertEquals(0, scanService.scanRoot(root.getId()).updated());
+        assertEquals(0, musicScanService.scanRoot(root.getId()).updated());
     }
 
     @Test
     void fullRescanPurgesDeletedFiles() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        scanService.scanRoot(root.getId());
+        musicScanService.scanRoot(root.getId());
         Track gone = trackRepository.findAll().stream()
                 .filter(t -> t.getFilePath().endsWith("东风破.mp3")).findFirst().orElseThrow();
         Files.delete(musicDir.resolve("周杰伦/叶惠美/02 - 东风破.mp3"));
@@ -171,19 +171,19 @@ class ScanIntegrationTest {
         assertEquals(4, playlistEntryRepository.findByPlaylistId(playlistId).size());
 
         // 增量扫描：缺失→标记隐藏，记录与歌单条目保留
-        ScanStats inc = scanService.scanRoot(root.getId());
+        ScanStats inc = musicScanService.scanRoot(root.getId());
         assertEquals(1, inc.missing());
         assertTrue(trackRepository.findById(gone.getId()).isPresent());
         assertEquals(4, playlistEntryRepository.findByPlaylistId(playlistId).size());
 
         // 全量重扫：已删文件彻底移除（含隐藏记录），并清理歌单条目/书签/播放队列引用
-        ScanStats full = scanService.scanRoot(root.getId(), true);
+        ScanStats full = musicScanService.scanRoot(root.getId(), true);
         assertEquals(1, full.missing());
         assertTrue(trackRepository.findById(gone.getId()).isEmpty());
         assertEquals(3, trackRepository.findByLibraryRootId(root.getId()).size());
         assertEquals(3, playlistEntryRepository.findByPlaylistId(playlistId).size());
         // 全量重扫后无缺失残留：再全量重扫 missing=0
-        ScanStats full2 = scanService.scanRoot(root.getId(), true);
+        ScanStats full2 = musicScanService.scanRoot(root.getId(), true);
         assertEquals(0, full2.missing());
     }
 
@@ -191,20 +191,20 @@ class ScanIntegrationTest {
     void deletedFileRestoredSameMtimeIsResurrected() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        scanService.scanRoot(root.getId());
+        musicScanService.scanRoot(root.getId());
         Path f = musicDir.resolve("周杰伦/叶惠美/02 - 东风破.mp3");
         Track gone = trackRepository.findAll().stream()
                 .filter(t -> t.getFilePath().endsWith("东风破.mp3")).findFirst().orElseThrow();
         long originalMtime = Files.getLastModifiedTime(f).toMillis();
         byte[] bytes = Files.readAllBytes(f);
         Files.delete(f);
-        ScanStats hidden = scanService.scanRoot(root.getId());
+        ScanStats hidden = musicScanService.scanRoot(root.getId());
         assertEquals(1, hidden.missing());
         assertFalse(trackRepository.findById(gone.getId()).orElseThrow().getIsAvailable());
         // 原样拷回并还原 mtime → 指纹与"隐藏记录"完全一致
         Files.write(f, bytes);
         Files.setLastModifiedTime(f, java.nio.file.attribute.FileTime.fromMillis(originalMtime));
-        ScanStats back = scanService.scanRoot(root.getId());
+        ScanStats back = musicScanService.scanRoot(root.getId());
         assertEquals(0, back.added()); // 不是新增，而是复活原记录
         assertEquals(0, back.missing());
         assertTrue(trackRepository.findById(gone.getId()).orElseThrow().getIsAvailable());
@@ -215,7 +215,7 @@ class ScanIntegrationTest {
     void fileChangeAndDeleteDetected() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        scanService.scanRoot(root.getId());
+        musicScanService.scanRoot(root.getId());
 
         // 变更：向"以父之名.mp3"追加字节（大小+mtime 变化 → 指纹变化）
         Path changed = musicDir.resolve("周杰伦/叶惠美/01 - 以父之名.mp3");
@@ -223,7 +223,7 @@ class ScanIntegrationTest {
         // 删除"东风破.mp3"
         Files.delete(musicDir.resolve("周杰伦/叶惠美/02 - 东风破.mp3"));
 
-        ScanStats stats = scanService.scanRoot(root.getId());
+        ScanStats stats = musicScanService.scanRoot(root.getId());
         assertEquals(1, stats.updated());
         assertEquals(1, stats.missing());
 
@@ -239,8 +239,8 @@ class ScanIntegrationTest {
         createSampleLibrary();
         LibraryRoot root = createRoot();
         // 让另一线程占用全局扫描锁模拟并发扫描 → 本线程触发扫描抛 1100（ReentrantLock 可重入，须跨线程持锁）
-        Object target = org.springframework.test.util.AopTestUtils.getTargetObject(scanService);
-        java.lang.reflect.Field lockField = ScanService.class.getDeclaredField("globalLock");
+        Object target = org.springframework.test.util.AopTestUtils.getTargetObject(musicScanService);
+        java.lang.reflect.Field lockField = MusicScanService.class.getDeclaredField("globalLock");
         lockField.setAccessible(true);
         java.util.concurrent.locks.ReentrantLock lock =
                 (java.util.concurrent.locks.ReentrantLock) lockField.get(target);
@@ -259,12 +259,12 @@ class ScanIntegrationTest {
         });
         holder.start();
         assertTrue(held.await(5, java.util.concurrent.TimeUnit.SECONDS), "持锁线程未就绪");
-        BizException ex = assertThrows(BizException.class, () -> scanService.scanRoot(root.getId()));
+        BizException ex = assertThrows(BizException.class, () -> musicScanService.scanRoot(root.getId()));
         assertEquals(1100, ex.getCode());
         release.countDown();
         holder.join(5000); // 等待持锁线程释放锁，避免竞态
         // 解锁后恢复正常扫描
-        ScanStats stats = scanService.scanRoot(root.getId());
+        ScanStats stats = musicScanService.scanRoot(root.getId());
         assertEquals(4, stats.added());
     }
 
@@ -272,7 +272,7 @@ class ScanIntegrationTest {
     void annotationScrobbleAndPlaylist() throws Exception {
         createSampleLibrary();
         LibraryRoot root = createRoot();
-        scanService.scanRoot(root.getId());
+        musicScanService.scanRoot(root.getId());
 
         User admin = new User();
         admin.setUsername("admin");
@@ -317,7 +317,7 @@ class ScanIntegrationTest {
         LibraryRoot root = createRoot();
         root.setEnabled(false);
         libraryRootRepository.save(root);
-        BizException ex = assertThrows(BizException.class, () -> scanService.scanRoot(root.getId()));
+        BizException ex = assertThrows(BizException.class, () -> musicScanService.scanRoot(root.getId()));
         assertEquals(1000, ex.getCode());
     }
 

@@ -8,7 +8,7 @@ import com.bifrost.adapter.syrinx.subsonic.dto.Indexes;
 import com.bifrost.adapter.syrinx.subsonic.dto.SubsonicResponse;
 import com.bifrost.adapter.syrinx.subsonic.service.SubsonicAssembler;
 import com.bifrost.common.exception.BizException;
-import com.bifrost.core.audio.ScanService;
+import com.bifrost.core.audio.MusicScanService;
 import com.bifrost.core.audio.model.AlbumListType;
 import com.bifrost.core.audio.service.AnnotationService;
 import com.bifrost.core.audio.service.BookmarkService;
@@ -69,7 +69,7 @@ public class SubsonicController {
     private final SubsonicAssembler assembler;
     private final SubsonicRenderer renderer;
     private final BifrostProperties properties;
-    private final ScanService scanService;
+    private final MusicScanService musicScanService;
     private final PlaylistService playlistService;
     private final PlaylistEntryRepository playlistEntryRepository;
     private final AnnotationService annotationService;
@@ -606,10 +606,11 @@ public class SubsonicController {
     public ResponseEntity<String> startScan(HttpServletRequest request,
                                             @RequestParam(defaultValue = "false") boolean fullScan) {
         // 后台触发，立即返回状态（Q 决策：扫描后台执行）；fullScan=true 强制全量重解析（回填歌词等）
+        // MusicScanService 只扫音乐目录（ADR-0004/0005），图书目录不受影响
         final boolean force = fullScan;
         CompletableFuture.runAsync(() -> {
             try {
-                scanService.scanAll(force);
+                musicScanService.scanAll(force);
             } catch (Exception e) {
                 log.warn("startScan 后台扫描失败", e);
             }
@@ -770,7 +771,11 @@ public class SubsonicController {
     private Directory resolveDirectory(String id) {
         Long rootId = SubsonicIds.parseRoot(id);
         if (rootId != null) {
-            return libraryRootRepository.findById(rootId).map(assembler::buildRootDirectory).orElse(null);
+            // 只解析 MUSIC 目录：图书目录 id 不得被音乐客户端当目录打开（ADR-0005 媒体边界）
+            return libraryRootRepository.findById(rootId)
+                    .filter(r -> r.getMediaType() == com.bifrost.domain.enums.MediaType.MUSIC)
+                    .map(assembler::buildRootDirectory)
+                    .orElse(null);
         }
         if (SubsonicIds.isUnknownArtist(id)) {
             return assembler.buildUnknownArtistDirectory();

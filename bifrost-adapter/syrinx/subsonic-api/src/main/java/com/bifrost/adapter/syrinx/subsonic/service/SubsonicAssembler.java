@@ -39,6 +39,7 @@ import com.bifrost.domain.entity.Artist;
 import com.bifrost.domain.entity.LibraryRoot;
 import com.bifrost.domain.entity.PlaylistEntry;
 import com.bifrost.domain.entity.Track;
+import com.bifrost.domain.enums.MediaType;
 import com.bifrost.domain.repo.AlbumRepository;
 import com.bifrost.domain.repo.ArtistRepository;
 import com.bifrost.domain.repo.LibraryRootRepository;
@@ -78,8 +79,9 @@ public class SubsonicAssembler {
 
     public MusicFolders buildMusicFolders() {
         MusicFolders folders = new MusicFolders();
-        List<MusicFolders.MusicFolder> items = libraryRootRepository.findAllByOrderByIdAsc().stream()
-                .filter(r -> Boolean.TRUE.equals(r.getEnabled()))
+        // 只暴露 MUSIC 目录（图书目录对音乐客户端隐藏，ADR-0004/0005 媒体边界）
+        List<MusicFolders.MusicFolder> items = libraryRootRepository
+                .findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType.MUSIC).stream()
                 .map(r -> {
                     MusicFolders.MusicFolder f = new MusicFolders.MusicFolder();
                     f.setId(String.valueOf(r.getId()));
@@ -100,11 +102,13 @@ public class SubsonicAssembler {
         return indexes;
     }
 
-    /** 索引时间戳：最近一次扫描时间（稳定，供 ifModifiedSince 缓存，Q16）。 */
+    /** 索引时间戳：最近一次扫描时间（稳定，供 ifModifiedSince 缓存，Q16）；全库视角只算 MUSIC 目录。 */
     private Long lastModifiedMillis(Long rootId) {
         List<LibraryRoot> roots = rootId == null
-                ? libraryRootRepository.findAllByOrderByIdAsc()
-                : libraryRootRepository.findById(rootId).map(List::of).orElse(List.of());
+                ? libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType.MUSIC)
+                : libraryRootRepository.findById(rootId)
+                        .filter(r -> r.getMediaType() == MediaType.MUSIC)
+                        .map(List::of).orElse(List.of());
         return roots.stream()
                 .map(LibraryRoot::getLastScanAt)
                 .filter(java.util.Objects::nonNull)
@@ -760,7 +764,7 @@ public class SubsonicAssembler {
         ScanStatus dto = new ScanStatus();
         // 仅检查 MUSIC 根（M2-book 起图书扫描状态由 /api/book-roots/scan/status 单独提供，物理隔开）
         dto.setScanning(libraryRootRepository.findAll().stream()
-                .filter(r -> r.getMediaType() == com.bifrost.domain.enums.MediaType.MUSIC)
+                .filter(r -> r.getMediaType() == MediaType.MUSIC)
                 .anyMatch(r -> r.getScanStatus() == com.bifrost.domain.enums.ScanStatus.SCANNING));
         dto.setCount(trackRepository.count());
         return dto;
@@ -769,8 +773,7 @@ public class SubsonicAssembler {
     public User buildUser(String username) {
         User dto = new User();
         dto.setUsername(username);
-        dto.setFolder(libraryRootRepository.findAllByOrderByIdAsc().stream()
-                .filter(r -> Boolean.TRUE.equals(r.getEnabled()))
+        dto.setFolder(libraryRootRepository.findByMediaTypeAndEnabledTrueOrderByIdAsc(MediaType.MUSIC).stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList());
         return dto;

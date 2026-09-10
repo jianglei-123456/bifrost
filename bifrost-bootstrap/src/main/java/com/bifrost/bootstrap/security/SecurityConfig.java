@@ -63,7 +63,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(BifrostProperties properties) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(properties.getCors().getAllowedOrigins());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        // PATCH：音乐目录 / 图书目录的部分更新端点（/api/music-roots/{id}、/api/book-roots/{id}）需要它，
+        // 否则跨域预检失败（同源代理部署不受影响，但直连后端的 Web 客户端会 403）
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         config.setAllowedHeaders(List.of("*"));
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

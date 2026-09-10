@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * M2-book 扫描端到端集成测试。
  *
  * <p>从 classpath 拷贝 {@code data-sample/ebook/*.epub} + {@code *.pdf} 到 {@code @TempDir}，
- * 建一个 BOOK 类型库根，触发 {@link BookScanService#scanRoot(Long, boolean)}，验证：</p>
+ * 建一个图书目录，触发 {@link BookScanService#scanRoot(Long, boolean)}，验证：</p>
  * <ul>
  *   <li>2 册入库（1 EPUB + 1 PDF）</li>
  *   <li>EPUB 解析出 title/authors/language/identifier</li>
@@ -69,7 +69,7 @@ class BookScanIntegrationTest {
         bookRepository.findAll().forEach(bookRepository::delete);
         libraryRootRepository.findAll().forEach(libraryRootRepository::delete);
 
-        // 建库根
+        // 建图书目录
         LibraryRoot root = new LibraryRoot();
         root.setName("Test Book Root");
         root.setPath(tempDir.toString());

@@ -1,6 +1,6 @@
 package com.bifrost.bootstrap;
 
-import com.bifrost.core.audio.ScanService;
+import com.bifrost.core.audio.MusicScanService;
 import com.bifrost.core.security.PasswordCipher;
 import com.bifrost.core.security.SubsonicTokenUtil;
 import com.bifrost.domain.entity.LibraryRoot;
@@ -62,7 +62,7 @@ class SubsonicIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private ScanService scanService;
+    private MusicScanService musicScanService;
     @Autowired
     private LibraryRootRepository libraryRootRepository;
     @Autowired
@@ -116,7 +116,7 @@ class SubsonicIntegrationTest {
         root.setPath(musicDir.toAbsolutePath().normalize().toString());
         root.setEnabled(true);
         rootId = libraryRootRepository.save(root).getId();
-        scanService.scanRoot(rootId);
+        musicScanService.scanRoot(rootId);
     }
 
     @Test

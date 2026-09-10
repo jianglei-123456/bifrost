@@ -3,30 +3,30 @@
 #       （data-sample/ebook/sample.epub + sample.pdf + cover-test.jpg）
 # 扫描后存在 1 EPUB + 1 PDF
 
-# 库根创建（book 类型）
-POST {{base_url}}/api/library-roots
+# 图书目录创建（/api/book-roots 强制 BOOK，不再接受 mediaType 覆盖）
+POST {{base_url}}/api/book-roots
 Authorization: Basic YWRtaW46dGVzdHBhc3M=
 Content-Type: application/json
 {
   "name": "测试图书库",
   "path": "E:/Dev/jianglei/bifrost-core/data-sample/ebook",
-  "enabled": true,
-  "mediaType": "BOOK"
+  "enabled": true
 }
 HTTP 200
 [Captures]
 ebook_root_id: jsonpath "$.data.id"
 [Asserts]
 jsonpath "$.code" == 0
+jsonpath "$.data.mediaType" == "BOOK"
 
-# 触发扫描（同步：M1 /api/library-roots/{id}/scan 走同步模式）
-POST {{base_url}}/api/library-roots/{{ebook_root_id}}/scan
+# 触发扫描（图书扫描是异步的：立即返回 SCANNING，须轮询 /api/book-roots/scan/status；
+# 音乐端点 /api/music-roots/{id}/scan 是同步的，且拒绝非 MUSIC 目录）
+POST {{base_url}}/api/book-roots/{{ebook_root_id}}/scan
 Authorization: Basic YWRtaW46dGVzdHBhc3M=
 HTTP 200
 [Asserts]
 jsonpath "$.code" == 0
-jsonpath "$.data.added" == 2
-jsonpath "$.data.error" == 0
+jsonpath "$.data.scanStatus" == "SCANNING"
 
 # ==================== catalog 根（navigation feed）====================
 GET {{base_url}}/opds/v1.2/catalog
@@ -39,13 +39,29 @@ xpath "string(/*[local-name()='feed']/*[local-name()='entry'][1]/*[local-name()=
 xpath "string(/*[local-name()='feed']/*[local-name()='entry'][2]/*[local-name()='title'])" == "最近添加"
 
 # ==================== all（acquisition feed）====================
+# 异步扫描：重试等待入库完成（2 本书出现）
 GET {{base_url}}/opds/v1.2/catalog/all?page=1&count=50
+[Options]
+retry: 30
+retry-interval: 500
 HTTP 200
 [Asserts]
 header "Content-Type" contains "kind=acquisition"
 xpath "count(/*[local-name()='feed']/*[local-name()='entry'])" >= 2
 xpath "string(/*[local-name()='feed']/*[local-name()='entry'][1]/*[local-name()='title'])" exists
 xpath "string(/*[local-name()='feed']/*[local-name()='entry'][1]/*[local-name()='link']/@type)" contains "/"
+
+# 书可见 ≠ 扫描结束：扫描线程仍在写库时，后面 api/ 目录的写操作（PATCH book / 上传封面）
+# 会撞 SQLite 写锁报 500。此处等扫描真正收敛到 IDLE 再继续。
+GET {{base_url}}/api/book-roots/scan/status
+Authorization: Basic YWRtaW46dGVzdHBhc3M=
+[Options]
+retry: 40
+retry-interval: 500
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 0
+jsonpath "$.data.scanStatus" == "IDLE"
 
 # recent 标 sort/new（Readest "Auto-download new items" 钩子）
 GET {{base_url}}/opds/v1.2/catalog/recent
