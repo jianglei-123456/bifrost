@@ -29,6 +29,28 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
     /** 孤儿（含已结算与未结算） */
     Page<ReadingProgress> findBySyncAccountIdAndBookIdIsNull(Long syncAccountId, Pageable pageable);
 
+    /** 孤儿（未忽略）——孤儿页签默认视图 */
+    Page<ReadingProgress> findBySyncAccountIdAndBookIdIsNullAndIgnoredFalse(Long syncAccountId, Pageable pageable);
+
+    /**
+     * 管理端列表（M3-sync T3.3）：按书标题 / 图书目录 / 设备过滤，可选"仅看孤儿"。
+     *
+     * <p>用实体 join（{@code left join Book b on p.bookId = b.id}）而不是关联映射——本项目
+     * 的实体之间一律是扁平 {@code Long} 外键（无 JPA 关联）。</p>
+     */
+    @Query("select p from ReadingProgress p left join Book b on p.bookId = b.id "
+            + "where p.syncAccountId = :accountId "
+            + "and (:onlyOrphans = false or p.bookId is null) "
+            + "and (:title is null or lower(b.title) like lower(concat('%', :title, '%'))) "
+            + "and (:libraryRootId is null or b.libraryRootId = :libraryRootId) "
+            + "and (:device is null or lower(p.device) like lower(concat('%', :device, '%')))")
+    Page<ReadingProgress> search(@Param("accountId") Long accountId,
+                                 @Param("onlyOrphans") boolean onlyOrphans,
+                                 @Param("title") String title,
+                                 @Param("libraryRootId") Long libraryRootId,
+                                 @Param("device") String device,
+                                 Pageable pageable);
+
     /** 全部进度（分页） */
     Page<ReadingProgress> findBySyncAccountId(Long syncAccountId, Pageable pageable);
 
@@ -39,8 +61,8 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
     long countBySyncAccountIdAndBookIdIsNotNull(Long syncAccountId);
 
     /** 最近一次上报时间（概览卡片；无数据时返回 null） */
-    @Query("select max(p.reportedAt) from ReadingProgress p")
-    Instant findLastReportedAt();
+    @Query("select max(p.reportedAt) from ReadingProgress p where p.syncAccountId = :accountId")
+    Instant findLastReportedAt(@Param("accountId") Long accountId);
 
     /**
      * 删除图书时"摘链"：进度保留为孤儿的已结算形态（R5-c）。

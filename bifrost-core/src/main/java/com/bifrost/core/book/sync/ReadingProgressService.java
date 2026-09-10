@@ -10,6 +10,8 @@ import com.bifrost.domain.repo.SyncDeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,6 +121,30 @@ public class ReadingProgressService {
     /** 待结算的未匹配进度（自动扫描完成后据此回填，M3-sync T1.5）。 */
     public List<ReadingProgress> findPendingSettlement(Long syncAccountId) {
         return progressRepository.findBySyncAccountIdAndBookIdIsNullAndScanAttemptedAtIsNull(syncAccountId);
+    }
+
+    /** 管理端列表（M3-sync T3.3）。 */
+    public Page<ReadingProgress> search(Long syncAccountId, String title, String device,
+                                        Long libraryRootId, boolean onlyOrphans, Pageable pageable) {
+        return progressRepository.search(syncAccountId, onlyOrphans, blankToNull(title),
+                libraryRootId, blankToNull(device), pageable);
+    }
+
+    /** 概览统计（M3-sync T3.5）。 */
+    public Stats stats(Long syncAccountId) {
+        return new Stats(
+                progressRepository.countBySyncAccountId(syncAccountId),
+                progressRepository.countBySyncAccountIdAndBookIdIsNotNull(syncAccountId),
+                progressRepository.countBySyncAccountIdAndBookIdIsNull(syncAccountId),
+                progressRepository.findLastReportedAt(syncAccountId));
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /** 概览统计载荷。 */
+    public record Stats(long progressCount, long matchedCount, long orphanCount, Instant lastReportedAt) {
     }
 
     /** 删除单条进度（管理端"重置"；设备本地位置不变，下次推送会重建记录）。 */

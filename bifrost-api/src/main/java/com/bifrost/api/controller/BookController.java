@@ -54,6 +54,7 @@ public class BookController {
 
     private final BookRepository bookRepository;
     private final ObjectMapper objectMapper;
+    private final com.bifrost.core.book.sync.ReadingProgressService readingProgressService;
 
     /**
      * 列表（分页 0-based；size 10-200；title/authors/series/libraryRootId/isAvailable 过滤）。
@@ -154,10 +155,16 @@ public class BookController {
         return ApiResponse.ok(BookDto.of(bookRepository.save(book)));
     }
 
-    /** 删 DB 行（不删文件，Q13 不级联） */
+    /**
+     * 删 DB 行（不删文件，Q13 不级联）。
+     *
+     * <p>M3-sync（R5-c）：该书上的阅读进度<b>保留</b>并"摘链"为已结算孤儿（{@code bookId=null}），
+     * 既不会丢数据，也不会被自动重绑——只能人工处理。</p>
+     */
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         requireBook(id);
+        readingProgressService.detachByBookId(id);
         bookRepository.deleteById(id);
         return ApiResponse.ok();
     }

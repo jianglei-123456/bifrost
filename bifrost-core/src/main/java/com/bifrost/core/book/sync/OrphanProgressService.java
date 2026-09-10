@@ -8,6 +8,8 @@ import com.bifrost.domain.repo.BookRepository;
 import com.bifrost.domain.repo.ReadingProgressRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,6 +112,13 @@ public class OrphanProgressService {
         ReadingProgress row = get(progressId);
         row.setIgnored(ignored);
         return progressRepository.save(row);
+    }
+
+    /** 孤儿列表（M3-sync T3.4；{@code includeIgnored=true} 时含被忽略的）。 */
+    public Page<ReadingProgress> listOrphans(Long syncAccountId, boolean includeIgnored, Pageable pageable) {
+        return includeIgnored
+                ? progressRepository.findBySyncAccountIdAndBookIdIsNull(syncAccountId, pageable)
+                : progressRepository.findBySyncAccountIdAndBookIdIsNullAndIgnoredFalse(syncAccountId, pageable);
     }
 
     private ReadingProgress get(Long progressId) {
