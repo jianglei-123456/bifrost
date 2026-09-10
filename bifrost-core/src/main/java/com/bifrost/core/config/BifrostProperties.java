@@ -19,10 +19,13 @@ import java.util.List;
 @ConfigurationProperties(prefix = "bifrost")
 public class BifrostProperties {
 
+    /** 数据目录（db / 封面缓存 / 日志的默认根） */
+    private Data data = new Data();
+
     /** SQLite 数据库 */
     private Db db = new Db();
 
-    /** 媒体库根 */
+    /** 媒体库根（预留未实现——库根的唯一写入通道是管理端 REST，见下方说明） */
     private Library library = new Library();
 
     /** 媒体通用配置 */
@@ -46,19 +49,34 @@ public class BifrostProperties {
     /** 跨域（CORS）配置 */
     private Cors cors = new Cors();
 
+    /** 数据目录配置 */
+    @Getter
+    @Setter
+    public static class Data {
+        /** 数据目录根：db、封面缓存、日志默认都挂在它下面（容器里指向 /data） */
+        private Path dir = Path.of("./data");
+    }
+
     /** SQLite 数据库配置 */
     @Getter
     @Setter
     public static class Db {
-        /** SQLite 文件路径 */
+        /** SQLite 文件路径（默认 ${bifrost.data.dir}/bifrost.db，可单独覆盖） */
         private Path path = Path.of("./data/bifrost.db");
     }
 
-    /** 媒体库根配置 */
+    /**
+     * 媒体库根配置（<b>预留未实现</b>）。
+     *
+     * <p>库根（音乐目录 / 图书目录）的唯一写入通道是管理端 REST
+     * （{@code /api/music-roots}、{@code /api/book-roots}），落在 DB 的 {@code library_root} 表；
+     * 本类没有任何消费者——在 yml 里写 {@code bifrost.library.roots} 不会生效。
+     * 容器部署时请挂载媒体目录后用管理端添加库根（操作手册 05）。</p>
+     */
     @Getter
     @Setter
     public static class Library {
-        /** 库根列表：name / path / enabled / mediaType */
+        /** 库根列表：name / path / enabled / mediaType（预留，暂无消费者） */
         private List<Root> roots = new ArrayList<>();
 
         @Getter
@@ -87,8 +105,8 @@ public class BifrostProperties {
     @Getter
     @Setter
     public static class Scan {
-        /** 定时扫描 cron；空=禁用 */
-        private String cron = "0 3 * * *";
+        /** 定时扫描 cron（6 段含秒，Spring CronExpression 要求；空=禁用） */
+        private String cron = "0 0 3 * * *";
         /** 事务批大小（文件数） */
         private int batchSize = 200;
     }

@@ -9,19 +9,28 @@ spring:
       hibernate:
         dialect: org.hibernate.community.dialect.SQLiteDialect
         format_sql: false
+  servlet:
+    multipart:
+      # 封面单文件 5MB（与 BookCoverController 的校验一致；缺这两行会退回 Boot 默认 1MB，
+      # 1–5MB 的封面在解析阶段就被拒，表现为 code 1200 的 500）
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 server:
   port: 18080
 
 bifrost:
+  # 数据目录根：db / 封面缓存 / 日志都挂在下面（容器里用 BIFROST_DATA_DIR=/data 覆盖，
+  # 或挂载外部 /data/application.yml 覆盖本键）
+  data:
+    dir: ./data
   db:
-    path: ./data/bifrost.db
-  library:
-    roots: []
+    path: ${bifrost.data.dir}/bifrost.db
   media:
-    cover-cache-dir: ./data/covers
+    cover-cache-dir: ${bifrost.data.dir}/covers
   scan:
-    cron: "0 3 * * *"
+    # 6 段 cron（含秒，Spring CronExpression 要求）；留空 = 关闭定时扫描
+    cron: "0 0 3 * * *"
     batch-size: 200
   auth:
     initial-username: admin

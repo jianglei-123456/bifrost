@@ -1,0 +1,49 @@
+# Bifrost 单镜像部署示例（Debian x86_64 宿主；步骤见 doc/操作手册/05-Docker部署.md）
+#
+# 首次启动前：
+#   1) 建目录并交给容器内 uid 1000（镜像以非 root 运行，属主不对会写不了库）
+#        sudo mkdir -p /srv/bifrost/{data,music,books}
+#        sudo chown -R 1000:1000 /srv/bifrost/data
+#   2) 导出初始管理员口令（仅首次启动必需）
+#        export BIFROST_AUTH_INITIAL_PASSWORD='你的口令'
+#   3) docker compose up -d   →  浏览器打开 http://<宿主IP>:18080/
+
+# 固定项目名：不写的话 compose 会按所在目录名推导（在 docker/ 下跑就叫 "docker"）
+name: bifrost
+
+services:
+  bifrost:
+    image: ghcr.io/jianglei-123456/bifrost:1.0.0
+    container_name: bifrost
+    restart: unless-stopped
+    ports:
+      # 端口是契约的一部分（Subsonic/OPDS/KOReader 三类客户端的连接地址都按 18080 写）
+      - "18080:18080"
+    environment:
+      # 首次启动必填（库里已有用户后可以删掉这行；缺了只在"无任何用户"的首启会启动失败）
+      BIFROST_AUTH_INITIAL_PASSWORD: ${BIFROST_AUTH_INITIAL_PASSWORD:?首次启动必须设置初始管理员口令}
+      # 数据目录根：db / covers / logs / secret.key 都在这个卷里
+      BIFROST_DATA_DIR: /data
+      # 定时扫描 cron 用 JVM 默认时区，不设 TZ 会按 UTC 算（"凌晨 3 点"变成早上 11 点）
+      TZ: Asia/Shanghai
+      # 阅读设备可达的同步地址：管理端"阅读进度"页展示给用户抄进 KOReader 的地址。
+      # 留空则由请求 Host 兜底——反代/改端口场景会算错，所以这里显式给（按需改）
+      BIFROST_KOSYNC_PUBLIC_BASE_URL: ${BIFROST_KOSYNC_PUBLIC_BASE_URL:-http://192.168.1.10:18080}
+      # 可选：改用外部配置覆盖文件（配合下面注释掉的挂载；不用就删掉这行）
+      # SPRING_CONFIG_ADDITIONAL_LOCATION: /data/application.yml
+    volumes:
+      # 数据卷：备份这个目录 = 备份全部数据（含 secret.key，丢了它已加密的口令就解不开）
+      - /srv/bifrost/data:/data
+      # 媒体目录：不进镜像，只在这里挂；挂完要到管理端"音乐库/图书库"添加库根才会被扫描。
+      # 注意：宿主目录不存在时 Docker 会自动创建成空目录 —— 扫描结果为空不是 bug。
+      # 只读挂载即可：Bifrost 只解析媒体文件，封面临时文件都落在 /data/covers。
+      - /srv/bifrost/music:/media/music:ro
+      - /srv/bifrost/books:/media/books:ro
+      # 可选：外部配置覆盖（改完 docker compose restart 生效）
+      # - /srv/bifrost/config/application.yml:/data/application.yml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:18080/api/ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s

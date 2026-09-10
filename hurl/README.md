@@ -25,7 +25,10 @@ powershell -File hurl\gen-sample-music.ps1
 Remove-Item -Recurse -Force .\data\hurl.db, .\data\hurl-covers -ErrorAction SilentlyContinue
 $env:BIFROST_AUTH_INITIAL_PASSWORD = 'testpass'
 $env:BIFROST_AUTH_SECRET = 'hurl-test-secret'
-java -jar bifrost-bootstrap\target\bifrost-bootstrap-1.0.0-SNAPSHOT.jar `
+# 取最新产物（PowerShell 不为原生命令展开通配符，所以先解析成变量；版本号变化时不用改这里）
+$jar = Get-ChildItem .\bifrost-bootstrap\target\bifrost-bootstrap-*.jar |
+  Sort-Object LastWriteTime -Descending | Select-Object -First 1
+java -jar $jar `
   --server.port=18080 --bifrost.db.path=./data/hurl.db --bifrost.media.cover-cache-dir=./data/hurl-covers
 # 4) 另开终端
 hurl --test --variable base_url=http://localhost:18080 hurl\setup.hurl

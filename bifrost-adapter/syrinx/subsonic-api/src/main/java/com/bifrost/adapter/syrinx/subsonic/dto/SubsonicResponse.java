@@ -1,5 +1,6 @@
 package com.bifrost.adapter.syrinx.subsonic.dto;
 
+import com.bifrost.common.constant.BifrostVersion;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -30,9 +31,9 @@ public class SubsonicResponse {
     @JacksonXmlProperty(isAttribute = true)
     private String type = "Bifrost";
 
-    /** 服务器自身版本（OpenSubsonic） */
+    /** 服务器自身版本（OpenSubsonic）：只放发布号，唯一来源 {@link BifrostVersion} */
     @JacksonXmlProperty(isAttribute = true)
-    private String serverVersion = "1.0.0-SNAPSHOT (M1)";
+    private String serverVersion = BifrostVersion.VERSION;
 
     /** 支持 OpenSubsonic（OpenSubsonic） */
     @JacksonXmlProperty(isAttribute = true)

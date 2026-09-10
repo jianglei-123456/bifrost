@@ -1,0 +1,28 @@
+# 构建上下文 = 仓库根；Dockerfile 只 COPY 一个文件：
+#   bifrost-bootstrap/target/bifrost-bootstrap-*.jar
+# 所以这里的目标是"别把运行时数据、密钥、其它模块产物塞进上下文"。
+
+# 运行时数据与样本（含真实媒体库路径、secret.key、SQLite 库）——绝不进上下文
+data
+data-sample
+
+# VCS / IDE / 代码索引
+.git
+.idea
+.codegraph
+
+# 文档与契约测试（镜像用不到；上下文小一点，构建快一点）
+doc
+hurl
+
+# 其它模块的产物（逐一列出，避免误伤 bifrost-bootstrap/target —— jar 在那里）
+bifrost-common/target
+bifrost-domain/target
+bifrost-core/target
+bifrost-api/target
+bifrost-adapter/target
+bifrost-adapter/syrinx/target
+bifrost-adapter/syrinx/subsonic-api/target
+bifrost-adapter/jellyfin-client/target
+bifrost-adapter/opds-publisher/target
+bifrost-adapter/kosync-server/target

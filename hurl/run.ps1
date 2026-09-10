@@ -5,13 +5,22 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
-# 1) package jar if missing
-$jar = Join-Path $repo 'bifrost-bootstrap\target\bifrost-bootstrap-1.0.0-SNAPSHOT.jar'
-if (-not (Test-Path $jar)) {
+# 1) package jar if missing（按通配找产物：版本号一变，硬编码的 jar 名会让脚本
+#    "先重新打包、再去跑旧路径"——找不到就打包，打包后再找一次）
+$jarDir = Join-Path $repo 'bifrost-bootstrap\target'
+function Find-BifrostJar {
+    Get-ChildItem -Path $jarDir -Filter 'bifrost-bootstrap-*.jar' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+}
+$jar = Find-BifrostJar
+if (-not $jar) {
     Write-Host '==> packaging jar...'
     & .\mvnw.cmd -q -DskipTests package
     if ($LASTEXITCODE -ne 0) { throw 'package failed' }
+    $jar = Find-BifrostJar
+    if (-not $jar) { throw "package succeeded but no bifrost-bootstrap-*.jar under $jarDir" }
 }
+Write-Host "==> jar: $jar"
 
 # 2) sample music + ebook
 & pwsh -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'gen-sample-music.ps1')

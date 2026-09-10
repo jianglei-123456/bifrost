@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- 日志目录：数据目录下 logs/（《通用功能说明》§3），可按日滚动 -->
-    <property name="LOG_DIR" value="${user.dir}/data/logs"/>
+    <!-- 日志目录：数据目录下 logs/（《通用功能说明》§3）。
+         跟随 bifrost.data.dir（容器里 BIFROST_DATA_DIR=/data → /data/logs），
+         默认 ./data/logs 与历史行为一致；不能再用固定的 ${user.dir}，
+         否则容器里日志落在卷外的 /app 下，容器重建即丢。 -->
+    <springProperty scope="context" name="BIFROST_DATA_DIR" source="bifrost.data.dir" defaultValue="./data"/>
+    <property name="LOG_DIR" value="${BIFROST_DATA_DIR}/logs"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

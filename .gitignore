@@ -39,6 +39,10 @@ logs/
 # 运行时数据目录（SQLite 数据库、封面缓存、密钥、日志）
 data/
 
+# 管理端产物（dashboard 的 `vite build --base=/admin/` 生成后拷进来，构建镜像前才需要；
+# 产物有 100+ 个带哈希的文件，不进仓库，靠 README/操作手册 05 的命令复现）
+bifrost-bootstrap/src/main/resources/static/admin/
+
 # hurl 契约测试运行产物（样本音乐）
 data-sample/
 

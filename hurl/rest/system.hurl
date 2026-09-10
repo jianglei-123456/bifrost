@@ -8,6 +8,8 @@ jsonpath "$['subsonic-response'].status" == "ok"
 jsonpath "$['subsonic-response'].version" == "1.16.1"
 jsonpath "$['subsonic-response'].type" == "Bifrost"
 jsonpath "$['subsonic-response'].openSubsonic" == true
+# 服务器自身版本＝发布版本（BifrostVersion 唯一来源）；发版时与本文件一起改
+jsonpath "$['subsonic-response'].serverVersion" == "1.0.0"
 
 # ping（默认 XML 双格式）
 GET {{base_url}}/rest/ping.view?u=admin&p=testpass&v=1.16.1&c=hurl

@@ -1,0 +1,114 @@
+name: release-image
+
+# 打 v* tag（或手动触发）→ 构建管理端产物 → 构建 jar → 构建单镜像 → 容器冒烟 → 推 ghcr.io
+# 镜像形态与理由见 doc/adr/0007-single-image-admin-under-admin.md；
+# 手工命令版见 doc/操作手册/05-Docker部署.md（本工作流与那份 runbook 做的是同一件事）。
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '镜像 tag（留空则用 1.0.0）'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bifrost
+  APP_VERSION: 1.0.0
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bifrost-core
+        uses: actions/checkout@v4
+
+      - name: Checkout bifrost-dashboard（管理端产物来源）
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/bifrost-dashboard
+          path: bifrost-dashboard
+          # tag 触发时取同名 tag（两个仓库一起打 v1.0.0），手动触发时取 master
+          ref: ${{ github.event_name == 'push' && github.ref_name || 'master' }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: bifrost-dashboard/pnpm-lock.yaml
+
+      - name: Build admin SPA（base=/admin/）并填入后端资源目录
+        working-directory: bifrost-dashboard
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec vue-tsc -b
+          pnpm exec vite build --base=/admin/
+          # 守卫：产物必须是 /admin/ 基址，否则打进 jar 的是一份根路径 UI（打开就白屏）
+          grep -q '/admin/assets/' dist/index.html
+          mkdir -p ../bifrost-bootstrap/src/main/resources/static/admin
+          cp -r dist/. ../bifrost-bootstrap/src/main/resources/static/admin/
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build fat jar（含管理端产物，跑全部测试）
+        run: sh ./mvnw -B clean verify
+
+      - name: Build image
+        run: |
+          docker build -f docker/Dockerfile \
+            --build-arg APP_VERSION="$APP_VERSION" \
+            --build-arg GIT_REVISION="${GITHUB_SHA::7}" \
+            -t "$IMAGE:$APP_VERSION" -t "$IMAGE:latest" .
+
+      - name: Smoke test（起容器打关键路由）
+        run: |
+          docker run -d --name bifrost-smoke \
+            -e BIFROST_AUTH_INITIAL_PASSWORD=smoketest \
+            -e BIFROST_DATA_DIR=/data \
+            -p 18080:18080 "$IMAGE:$APP_VERSION"
+          ready=no
+          for _ in $(seq 1 60); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/api/ping || true)" = "200" ]; then
+              ready=yes; break
+            fi
+            sleep 2
+          done
+          set -e
+          test "$ready" = "yes" || { docker logs bifrost-smoke; exit 1; }
+          echo "ping      : $(curl -s http://localhost:18080/api/ping)"
+          echo "root      : $(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/)"
+          echo "admin     : $(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/admin/)"
+          echo "subsonic  : $(curl -s "http://localhost:18080/rest/ping.view?u=admin&p=smoketest&v=1.16.1&c=smoke&f=json")"
+          echo "unknown   : $(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/nosuch)"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/)" = "302"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/admin/)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/admin/books/12)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/nosuch)" = "404"
+          curl -s "http://localhost:18080/rest/ping.view?u=admin&p=smoketest&v=1.16.1&c=smoke&f=json" | grep -q '"status":"ok"'
+
+      - name: Cleanup smoke container
+        if: always()
+        run: docker rm -f bifrost-smoke || true
+
+      - name: Push to ghcr.io
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE:$APP_VERSION"
+          docker push "$IMAGE:latest"
