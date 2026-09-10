@@ -48,4 +48,15 @@ final class BookSyncPaging {
         return bookRepository.findAllById(ids).stream()
                 .collect(Collectors.toMap(Book::getId, Function.identity()));
     }
+
+    /**
+     * 安全取书。
+     *
+     * <p>⚠️ 不能直接写 {@code books.get(row.getBookId())}：孤儿进度的 {@code bookId} 是 null，
+     * 而 {@link Map#of()} 生成的不可变 Map 用 null 键查询会抛 {@link NullPointerException}
+     * （真被 hurl 契约测出来的一个 500）。</p>
+     */
+    static Book bookOrNull(Map<Long, Book> books, Long bookId) {
+        return bookId == null ? null : books.get(bookId);
+    }
 }

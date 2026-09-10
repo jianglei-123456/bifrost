@@ -256,6 +256,46 @@ class BookSyncAdminIntegrationTest {
     }
 
     @Test
+    void orphanOnlyFilterReturnsOrphansWithoutBookFields() throws Exception {
+        // 回归：onlyOrphans=true 时列表里全是 bookId=null 的行——曾经因为 Map.of() 不接受 null 键而 500
+        String matched = "aaaabbbbccccdddd1111222233334444";
+        saveBook(matched, "Matched For Filter");
+        pushProgress(matched, 0.4, "Kobo_nova", "dev-1");
+        pushProgress("bbbbccccddddaaaa5555666677778888", 0.1, "Kindle", "dev-2");
+
+        mockMvc.perform(admin(get("/api/book-sync/progress").param("onlyOrphans", "true")))
+                .andExpect(status().isOk())                                  // ← 回归点：不是 500
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].bookId").doesNotExist())  // 孤儿没有书信息
+                .andExpect(jsonPath("$.data.items[0].bookTitle").doesNotExist())
+                .andExpect(jsonPath("$.data.items[0].documentFingerprint")
+                        .value("bbbbccccddddaaaa5555666677778888"));
+    }
+
+    @Test
+    void progressListSupportsTitleAndDeviceFilters() throws Exception {
+        String document = "ddddeeeeffff00001111222233334444";
+        saveBook(document, "Filterable Title");
+        pushProgress(document, 0.5, "Kobo_nova", "dev-1");
+        pushProgress("eeeeffff000011112222333344445555", 0.2, "Kindle", "dev-2");
+
+        mockMvc.perform(admin(get("/api/book-sync/progress")).param("title", "Filterable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].bookTitle").value("Filterable Title"));
+
+        mockMvc.perform(admin(get("/api/book-sync/progress")).param("device", "kindle"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].device").value("Kindle"));
+
+        mockMvc.perform(admin(get("/api/book-sync/progress")).param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1000));
+    }
+
+    @Test
     void devicesAreListed() throws Exception {
         pushProgress("01230123012301230123012301230123", 0.5, "Kobo_nova", "dev-1");
 

@@ -51,7 +51,7 @@ public class BookSyncProgressController {
                 onlyOrphans, BookSyncPaging.of(page, size));
         Map<Long, Book> books = BookSyncPaging.loadBooks(bookRepository, rows.getContent());
         List<ReadingProgressView> items = rows.getContent().stream()
-                .map(row -> ReadingProgressView.of(row, books.get(row.getBookId())))
+                .map(row -> ReadingProgressView.of(row, BookSyncPaging.bookOrNull(books, row.getBookId())))
                 .toList();
         return ApiResponse.ok(new PageResult<>(rows.getTotalElements(), items));
     }

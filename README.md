@@ -4,7 +4,9 @@
 
 **里程碑 M1 ✅**：音乐管理 + **Subsonic 兼容协议服务（Syrinx）**——Bifrost 自身即 Subsonic 服务端，Feishin、DSub、Symfonium、play:Sub、Supersonic 等客户端可直接连接浏览、搜索、播放与管理音乐。管理端前端（Vue Dashboard）在独立项目开发，消费 `/api/**` REST 契约。
 
-**里程碑 M2-book ✅**：图书管理 + **OPDS 1.2 协议发布**——KOReader（真机/模拟器）和 Readest（桌面/Web）可通过标准 OPDS catalog 浏览、搜索、下载 EPUB/PDF；管理端 `/api/book-roots` + `/api/books` 提供 CRUD + 扫描 + 元数据编辑 + 封面上传。图书侧与音乐侧物理隔开（独立实体、独立扫描器、独立封面存储、独立过滤器链，见 [ADR-0004](doc/adr/0004-book-physical-isolation.md)）。进度同步（KOSync/WebDAV/PSE）延后到后续里程碑（见 [doc/m2-book/task/05-延后项.md](doc/m2-book/task/05-延后项.md)）。
+**里程碑 M2-book ✅**：图书管理 + **OPDS 1.2 协议发布**——KOReader（真机/模拟器）和 Readest（桌面/Web）可通过标准 OPDS catalog 浏览、搜索、下载 EPUB/PDF；管理端 `/api/book-roots` + `/api/books` 提供 CRUD + 扫描 + 元数据编辑 + 封面上传。图书侧与音乐侧物理隔开（独立实体、独立扫描器、独立封面存储、独立过滤器链，见 [ADR-0004](doc/adr/0004-book-physical-isolation.md)）。
+
+**里程碑 M3-sync**：**阅读进度同步（KOSync）**——Bifrost 自己实现 KOReader 的进度同步协议（`/users/create`、`/users/auth`、`PUT /syncs/progress`、`GET /syncs/progress/:document`、`/healthcheck`，挂根路径），设备在 *Progress sync → Custom sync server* 填 `http://<host>:18080` 即可多端续读；服务端把客户端算出的**文档指纹**映射回库里的书，管理端 `/api/book-sync/**` 提供同步账号配置、进度列表、孤儿进度处理与设备列表。同步账号与管理员账号相互独立。设计见 [doc/m3-sync/](doc/m3-sync/task/00-总览.md) 与 [ADR-0006](doc/adr/0006-kosync-self-implemented.md)（自研而非集成官方 sync-server 的判断依据）。
 
 ## 技术栈
 
@@ -63,6 +65,7 @@ curl http://localhost:18080/opds/v1.2/catalog # → Atom OPDS navigation feed（
 3. KOReader 添加 OPDS catalog：`http://<host>:18080/opds/v1.2/catalog`；Readest 同上（**填完整路径**，不是 `/opds`；分客户端步骤见操作手册 [04](doc/操作手册/04-连接阅读器客户端.md)）；
 4. 客户端可浏览 / 搜索 / 下载（KOReader EPUBC；Readest EPUB + PDF）；
 5. **可选鉴权**：在 `application.yml` 设置 `bifrost.opds.require-auth: true` 强制 Basic 鉴权（默认匿名）。
+6. **阅读进度同步（可选）**：管理端「阅读进度」页拿同步账号（地址/用户名/口令），在 KOReader 的 *Progress sync → Custom sync server* 填 `http://<host>:18080`（**要手动把预填的 `https://` 改成 `http://`**）后 Register/Login；多设备共用同一账号即可互相续读。详见操作手册 [04](doc/操作手册/04-连接阅读器客户端.md) §7。
 
 ## 测试
 
@@ -96,4 +99,5 @@ BIFROST_AUTH_INITIAL_PASSWORD=yourpass docker compose up -d
 | [音乐管理功能说明](doc/功能设计/音乐管理功能说明.md) | 音乐管理与 Subsonic 服务能力、客户端兼容矩阵 |
 | [整体技术架构](doc/技术设计/整体技术架构.md) | 模块架构、技术栈、存储、配置、Docker |
 | [音乐管理技术设计](doc/技术设计/音乐管理技术设计.md) | 领域模型、扫描算法、Subsonic 端点实现设计 |
+| [阅读进度同步（M3-sync）](doc/m3-sync/task/00-总览.md) | KOSync 协议实现 + 文档指纹→图书映射 + 孤儿进度 + `/api/book-sync/**`（含 [ADR-0006](doc/adr/0006-kosync-self-implemented.md) 与[协议实证档](doc/m3-sync/调研/01-KOSync协议实证.md)） |
 | [Subsonic API 参考](doc/协议参考/Subsonic_API_参考.md) | 协议规范事实：端点、认证、错误码、客户端生态 |

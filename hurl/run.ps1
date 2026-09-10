@@ -48,6 +48,15 @@ try {
         & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'opds')
         if ($LASTEXITCODE -ne 0) { throw 'opds contract tests failed' }
     }
+    # KOSync（M3-sync）在 api/rest 之前：需要库里已有书（捕获真实文档指纹），
+    # 且按 01→02→03 顺序跑（文件名前缀 + 显式列举，变量的跨文件传递依赖 hurl 同一次调用）
+    if (Test-Path (Join-Path $PSScriptRoot 'kosync')) {
+        & hurl --test --jobs 1 --variable "base_url=$base" `
+            (Join-Path $PSScriptRoot 'kosync\01-setup.hurl') `
+            (Join-Path $PSScriptRoot 'kosync\02-protocol.hurl') `
+            (Join-Path $PSScriptRoot 'kosync\03-orphan.hurl')
+        if ($LASTEXITCODE -ne 0) { throw 'kosync contract tests failed' }
+    }
     # api/ + rest/ 串行（避免 books/cover 与 books.hurl 并行抢同一 bookId）
     & hurl --test --jobs 1 --variable "base_url=$base" (Join-Path $PSScriptRoot 'api') (Join-Path $PSScriptRoot 'rest')
     if ($LASTEXITCODE -ne 0) { throw 'api/rest contract tests failed' }

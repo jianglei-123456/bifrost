@@ -5,7 +5,9 @@
 ## 目录
 
 - `setup.hurl`：初始化（创建音乐目录 + 扫描样本库）
-- `api/*.hurl`：管理 REST（`/api/music-roots`、`/api/book-roots`、`/api/books` 等）契约
+- `opds/setup.hurl`：建图书目录 + 扫描 + OPDS 契约
+- `kosync/01-setup.hurl` → `02-protocol.hurl` → `03-orphan.hurl`：阅读进度同步契约（run.ps1 按此顺序调用；**每个文件自备前置**——hurl 的变量不跨文件，02/03 各自从 `/api/books` 取文档指纹与图书 id）
+- `api/*.hurl`：管理 REST（`/api/music-roots`、`/api/book-roots`、`/api/books`、`/api/book-sync` 等）契约
 - `rest/*.hurl`：Subsonic（/rest/**）契约
 
 ## 运行
@@ -36,6 +38,8 @@ hurl --test --variable base_url=http://localhost:18080 hurl\api\*.hurl hurl\rest
 - 管理 REST：HTTP Basic `YWRtaW46dGVzdHBhc3M=`（admin:testpass）
 - Subsonic：密码认证 `p=testpass`；令牌认证示例
   `t=82b7df2e4394f5fc84ef9e683191fb2a`（= md5("testpass" + salt "abcdef")）
+- KOSync 同步账号：用户名 `reader` / 口令 `synctest`（**必须与管理员口令不同**，后端会拒绝相同口令）；
+  协议头 `x-auth-key` = md5("synctest") = `cfa90411bb0e47abdfffc42c21508bdf`（hurl 没有 md5 函数，按 Subsonic 令牌的既有做法钉死 hex）。`kosync/01-setup.hurl` 会把这个账号写进库里，`api/book-sync.hurl` 自带同样的前置。
 
 ## 样本库
 
