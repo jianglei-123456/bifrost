@@ -46,7 +46,12 @@ public class SyncAccountService {
 
     private final SecureRandom random = new SecureRandom();
 
-    /** 当前同步账号；不存在则创建（首次启动的幂等入口）。 */
+    /**
+     * 当前同步账号；不存在则创建（首次启动的幂等入口）。
+     *
+     * <p>正常路径下账号由 {@link SyncAccountInitializer} 在收流量之前就建好了，这里是自愈兜底
+     * （例如账号行被手工删掉）。</p>
+     */
     @Transactional
     public SyncAccount currentOrCreate() {
         return syncAccountRepository.findFirstByOrderByIdAsc()
