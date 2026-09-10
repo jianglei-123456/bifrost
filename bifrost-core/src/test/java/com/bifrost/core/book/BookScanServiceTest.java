@@ -201,7 +201,7 @@ class BookScanServiceTest {
                         "urn:uuid:22222222", null, null, null, null));
         String abs = epub.toAbsolutePath().normalize().toString();
 
-        // 已有记录：filePath 匹配 + 指纹一致 + isAvailable=true → 跳过
+        // 已有记录：filePath 匹配 + 指纹一致 + isAvailable=true + 文档指纹已算过 → 跳过
         Book existing = new Book();
         existing.setFilePath(abs);
         existing.setFileSize(java.nio.file.Files.size(epub));
@@ -210,12 +210,50 @@ class BookScanServiceTest {
         existing.setIsAvailable(true);
         existing.setTitle("OLD");  // 故意不同
         existing.setLibraryRootId(20L);
+        existing.setPartialMd5("0123456789abcdef0123456789abcdef");  // M3-sync：已算过，无需补算
         when(bookRepository.findByLibraryRootId(20L)).thenReturn(new ArrayList<>(List.of(existing)));
 
         ScanStats stats = service.scanRoot(20L, false);  // force=false
         assertEquals(0, stats.added());
         assertEquals(0, stats.updated());
         verify(bookRepository, never()).save(any(Book.class));
+    }
+
+    @Test
+    void scanRootIncrementalBackfillsDocumentFingerprintWithoutReparsing(@TempDir Path libDir) throws Exception {
+        newService();
+        LibraryRoot r = bookRoot(libDir, 60L);
+        when(libraryRootRepository.findById(60L)).thenReturn(Optional.of(r));
+        when(libraryRootRepository.save(any(LibraryRoot.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Path epub = TestBookFactory.writeEpub(libDir, "legacy.epub",
+                new TestBookFactory.BookSpec("Title", List.of("Alice"), "en", null, null, null, List.of(),
+                        "urn:uuid:44444444", null, null, null, null));
+        String abs = epub.toAbsolutePath().normalize().toString();
+
+        Book existing = new Book();
+        existing.setFilePath(abs);
+        existing.setFileSize(java.nio.file.Files.size(epub));
+        existing.setFileLastModified(java.nio.file.Files.getLastModifiedTime(epub).toMillis());
+        existing.setFingerprint(com.bifrost.common.util.Fingerprint.of(epub));
+        existing.setIsAvailable(true);
+        existing.setTitle("OLD");
+        existing.setLibraryRootId(60L);
+        existing.setPartialMd5(null);  // 老库升级：指纹一致但文档指纹缺失
+        when(bookRepository.findByLibraryRootId(60L)).thenReturn(new ArrayList<>(List.of(existing)));
+
+        ScanStats stats = service.scanRoot(60L, false);
+
+        // 自愈：只补这一列，计入 updated，且不重解析元数据（title 仍是 OLD）
+        assertEquals(0, stats.added());
+        assertEquals(1, stats.updated());
+        ArgumentCaptor<Book> capt = ArgumentCaptor.forClass(Book.class);
+        verify(bookRepository, times(1)).save(capt.capture());
+        Book saved = capt.getValue();
+        assertNotNull(saved.getPartialMd5());
+        assertEquals(32, saved.getPartialMd5().length());
+        assertEquals("OLD", saved.getTitle());
     }
 
     @Test

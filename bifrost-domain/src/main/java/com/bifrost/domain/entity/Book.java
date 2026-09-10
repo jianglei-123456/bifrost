@@ -2,6 +2,7 @@ package com.bifrost.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -20,7 +21,9 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "book", uniqueConstraints = @UniqueConstraint(name = "uk_book_filePath", columnNames = "filePath"))
+@Table(name = "book",
+        uniqueConstraints = @UniqueConstraint(name = "uk_book_filePath", columnNames = "filePath"),
+        indexes = @Index(name = "idx_book_partial_md5", columnList = "partial_md5"))
 public class Book extends BaseEntity {
 
     // ---- 文件（每书一文件，unique） ----
@@ -40,6 +43,16 @@ public class Book extends BaseEntity {
     /** 变更检测指纹 = path|size|mtime（非空） */
     @Column(nullable = false, length = 2048)
     private String fingerprint;
+
+    /**
+     * 文档指纹：KOSync 客户端对文件内容算出的 partial MD5（32 位小写 hex；未算过 = null）。
+     *
+     * <p>与 {@link #fingerprint}（path|size|mtime）是<b>两套不同的指纹</b>，不可互相替代
+     * （M3-sync T1.1、CONTEXT.md「文档指纹」）。扫描时写入；老库由
+     * {@code BookPartialMd5BackfillRunner} 兜底回填。</p>
+     */
+    @Column(name = "partial_md5", length = 32)
+    private String partialMd5;
 
     // ---- 元数据 ----
 

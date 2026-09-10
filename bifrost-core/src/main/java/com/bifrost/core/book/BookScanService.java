@@ -60,6 +60,11 @@ public class BookScanService {
     private final PlatformTransactionManager transactionManager;
     private final BifrostProperties properties;
 
+    /** 是否有图书扫描正在运行（未匹配进度的自动扫描在触发前检查：正在扫描则跳过、不排队，M3-sync C1） */
+    public boolean isScanning() {
+        return bookScanLock.isLocked();
+    }
+
     /** 扫描所有启用的图书目录（增量） */
     public ScanStats scanAll() {
         return scanAll(false);
@@ -161,14 +166,28 @@ public class BookScanService {
             String fingerprint = Fingerprint.of(file);
             if (!force && existing != null && Boolean.TRUE.equals(existing.getIsAvailable())
                     && fingerprint.equals(existing.getFingerprint())) {
+                // 文件未变 → 元数据不重解析；但文档指纹可能缺失（老库升级 / 上次读文件失败）：
+                // 只补这一列，绝不因为"新加了一列"而把整库元数据重解析一遍（M3-sync T1.3）
+                if (existing.getPartialMd5() == null) {
+                    String backfilled = DocumentFingerprint.partialMd5(file);
+                    if (backfilled != null) {
+                        pending.add(PendingBook.fingerprintOnly(existing, abs, fingerprint,
+                                root.getId(), backfilled));
+                        counters.updated++;
+                        if (pending.size() >= batchSize) {
+                            flush(tx, pending);
+                        }
+                    }
+                }
                 continue;
             }
             BookResult result = parserRegistry.parse(file);
             if (result.parseError()) {
                 counters.error++;
             }
+            // 文档指纹在事务外计算（与 parser 同级），避免在批事务里做文件 IO
             pending.add(new PendingBook(existing != null ? existing : new Book(), result, file, abs,
-                    fingerprint, root.getId()));
+                    fingerprint, DocumentFingerprint.partialMd5(file), root.getId()));
             if (existing == null) {
                 counters.added++;
             } else {
@@ -209,7 +228,14 @@ public class BookScanService {
         tx.executeWithoutResult(status -> {
             for (PendingBook p : batch) {
                 Book b = p.book();
-                applyFields(b, p.result(), p.file(), p.absPath(), p.fingerprint(), p.libraryRootId());
+                if (p.result() == null) {
+                    // 只补文档指纹（增量跳过的老书）：元数据与封面都不动
+                    b.setPartialMd5(p.partialMd5());
+                    bookRepository.save(b);
+                    continue;
+                }
+                applyFields(b, p.result(), p.file(), p.absPath(), p.fingerprint(), p.partialMd5(),
+                        p.libraryRootId());
                 bookRepository.save(b);
                 // 封面：内嵌图（仅首次，storeEmbeddedCover 内部会判 coverSource==null 跳过）
                 bookCoverService.storeEmbeddedCover(b, p.result().embeddedCover());
@@ -217,11 +243,13 @@ public class BookScanService {
         });
     }
 
-    private void applyFields(Book b, BookResult r, Path file, String absPath, String fingerprint, Long rootId) {
+    private void applyFields(Book b, BookResult r, Path file, String absPath, String fingerprint,
+                            String partialMd5, Long rootId) {
         b.setFilePath(absPath);
         b.setFileSize(FileIO.size(file));
         b.setFileLastModified(FileIO.lastModifiedMillis(file));
         b.setFingerprint(fingerprint);
+        b.setPartialMd5(partialMd5);
         b.setTitle(r.title());
         b.setAuthors(r.authors());
         b.setLanguage(r.language());
@@ -248,8 +276,19 @@ public class BookScanService {
                 + ",\"missing\":" + stats.missing() + ",\"error\":" + stats.error() + "}";
     }
 
+    /**
+     * 待落库的书。
+     *
+     * <p>{@code result == null} 表示"只补文档指纹"（增量跳过的老书，不重解析元数据，
+     * 因此 {@code file} 也为 null）。</p>
+     */
     private record PendingBook(Book book, BookResult result, Path file, String absPath,
-                               String fingerprint, Long libraryRootId) {
+                               String fingerprint, String partialMd5, Long libraryRootId) {
+
+        static PendingBook fingerprintOnly(Book book, String absPath, String fingerprint,
+                                          Long libraryRootId, String partialMd5) {
+            return new PendingBook(book, null, null, absPath, fingerprint, partialMd5, libraryRootId);
+        }
     }
 
     private static final class Counters {

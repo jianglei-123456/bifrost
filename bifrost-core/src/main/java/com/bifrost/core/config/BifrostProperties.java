@@ -40,6 +40,9 @@ public class BifrostProperties {
     /** OPDS 配置（M2-book） */
     private Opds opds = new Opds();
 
+    /** 阅读进度同步（KOSync）配置（M3-sync） */
+    private Kosync kosync = new Kosync();
+
     /** 跨域（CORS）配置 */
     private Cors cors = new Cors();
 
@@ -96,6 +99,20 @@ public class BifrostProperties {
     public static class Opds {
         /** 是否要求 HTTP Basic 认证（默认 false=匿名，Q6-C） */
         private boolean requireAuth = false;
+    }
+
+    /** 阅读进度同步（KOSync）配置（M3-sync） */
+    @Getter
+    @Setter
+    public static class Kosync {
+        /** 协议开关（false = 不注册端点与安全链；关闭后 5 个端点必须 404） */
+        private boolean enabled = true;
+        /** 是否放行 POST /users/create 的自助注册（R2b） */
+        private boolean registrationEnabled = true;
+        /** 未匹配的新文档指纹是否触发一次图书扫描（R5/C1：无冷却、同一指纹只触发一次） */
+        private boolean autoScanOnUnmatched = true;
+        /** 展示给用户抄进阅读器的同步服务地址；留空则由管理端按"当前主机名 + server.port"拼 */
+        private String publicBaseUrl = "";
     }
 
     /** 认证配置 */
