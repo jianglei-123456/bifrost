@@ -34,6 +34,10 @@ bifrost:
     batch-size: 200
   auth:
     initial-username: admin
+  # 请求日志：每个进来的请求打一行原样 URL（含查询串；凭据参数 p/t/s 记为 ***），
+  # 在认证/路由之前，用来查"客户端到底调了哪个端点"。嫌吵置 false 关闭。
+  request-log:
+    enabled: true
   subsonic:
     enabled: true
     api-version: 1.16.1
