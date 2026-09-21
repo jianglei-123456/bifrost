@@ -1,7 +1,7 @@
 name: release-image
 
 # 打 v* tag（或手动触发）→ 构建管理端产物 → 构建 jar → 构建单镜像 → 容器冒烟 → 推 ghcr.io
-# 镜像形态与理由见 doc/adr/0007-single-image-admin-under-admin.md；
+# 镜像形态与理由见 docs/adr/0007-single-image-admin-under-admin.md；
 # 手工命令版见 doc/操作手册/05-Docker部署.md（本工作流与那份 runbook 做的是同一件事）。
 
 on:

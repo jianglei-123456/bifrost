@@ -220,4 +220,4 @@ KOReader 内置支持 **WebDAV / FTP / Dropbox** 三种云存储。来源：<htt
 > **本轮（M2-book Day-one）落地选择**：
 > - 协议分发：OPDS 1.x（KOReader + Readest 双端），**`/opds/v1.2/catalog/...` 标准路径**
 > - 进度同步：留作"已知未实现"边界（见 `05-延后项.md`）
-> - 实体模型：物理隔开（不复用 music 表），见 `doc/adr/0004-book-physical-isolation.md`
+> - 实体模型：物理隔开（不复用 music 表），见 `docs/adr/0004-book-physical-isolation.md`

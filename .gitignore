@@ -47,3 +47,6 @@ bifrost-bootstrap/src/main/resources/static/admin/
 data-sample/
 
 .codegraph
+
+# 本地 issue / spec 追踪（`/to-tickets`、`/triage`、`/to-spec` 等技能写在这里，见 docs/agents/issue-tracker.md）
+.scratch/
