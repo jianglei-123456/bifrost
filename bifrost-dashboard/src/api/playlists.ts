@@ -1,6 +1,6 @@
 /** 歌单 API（T4.6） */
 import { request } from './client'
-import type { Playlist, PlaylistDetailView } from './types'
+import type { PageResult, Playlist, PlaylistDetailView, Track } from './types'
 
 export interface PlaylistBody {
   name?: string
@@ -27,12 +27,33 @@ export function deletePlaylist(id: number): Promise<void> {
   return request<void>({ method: 'delete', url: `/api/playlists/${id}` })
 }
 
-/** 追加曲目（position 自动追加） */
-export function addPlaylistEntry(playlistId: number, trackId: number): Promise<void> {
-  return request<void>({
+/**
+ * 候选曲目（分页）：可加入本歌单的曲目——后端已排除「已在歌单的」与「文件缺失的」。
+ *
+ * `keyword` 为空即默认列表，非空即搜索；两者排序一致（入库时间倒序），
+ * 所以「默认列表」与「搜索」是同一个端点换参数。
+ */
+export function fetchCandidateTracks(
+  playlistId: number,
+  params: { page: number; size: number; keyword: string },
+): Promise<PageResult<Track>> {
+  return request<PageResult<Track>>({
+    method: 'get',
+    url: `/api/playlists/${playlistId}/candidate-tracks`,
+    params: {
+      page: params.page,
+      size: params.size,
+      q: params.keyword.trim() || undefined,
+    },
+  })
+}
+
+/** 批量追加曲目（position 依次追加在末尾）；入参已由调用方保证非空 */
+export function addPlaylistEntries(playlistId: number, trackIds: number[]): Promise<number> {
+  return request<number>({
     method: 'post',
     url: `/api/playlists/${playlistId}/entries`,
-    data: { trackId },
+    data: { trackIds },
   })
 }
 

@@ -1,10 +1,13 @@
 package com.bifrost.domain.repo;
 
 import com.bifrost.domain.entity.Track;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,4 +51,22 @@ public interface TrackRepository extends JpaRepository<Track, Long> {
             + "or lower(coalesce(t.artistName, '')) like lower(concat('%', :q, '%'))) "
             + "order by t.title asc")
     List<Track> searchByKeyword(@Param("q") String keyword, @Param("rootId") Long rootId);
+
+    /**
+     * 歌单「添加曲目」候选：可添加的曲目（分页）。
+     *
+     * <p>排除 {@code excludedIds}（调用方传入"已在歌单的曲目 ID"，用 no-op 仓储方法即可取到，
+     * 避免把歌单耦合进曲目仓储）；只含可见（isAvailable=true）曲目；{@code q} 为空时不过滤，
+     * 非空时按标题或艺术家模糊匹配。</p>
+     *
+     * <p><b>调用方必须按 createdAt 倒序 + id 倒序排序</b>（见 {@code Pageable}）：入库时间相同时
+     * 没有稳定次序，翻页会重复或漏行——扫描按批插入，同批 createdAt 完全相同是常态。</p>
+     */
+    @Query("select t from Track t where t.isAvailable = true "
+            + "and t.id not in :excludedIds "
+            + "and (:q is null "
+            + "     or lower(t.title) like lower(concat('%', :q, '%')) "
+            + "     or lower(coalesce(t.artistName, '')) like lower(concat('%', :q, '%')))")
+    Page<Track> findCandidates(@Param("excludedIds") Collection<Long> excludedIds,
+                               @Param("q") String keyword, Pageable pageable);
 }

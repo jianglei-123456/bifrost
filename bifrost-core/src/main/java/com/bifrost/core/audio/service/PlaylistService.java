@@ -80,6 +80,31 @@ public class PlaylistService {
         return entryRepository.save(entry);
     }
 
+    /**
+     * 批量追加曲目（按入参顺序），返回实际新增的条目数。
+     *
+     * <p>{@code trackIds} 由调用方归一化（去空、去重）后再传入。position 连续追加在末尾：
+     * 先按现有条目的最大 position 起算，再逐条 +1。整个批量在同一个事务内完成，
+     * 不会留下"加到一半"的歌单。</p>
+     */
+    @Transactional
+    public int addEntries(Long playlistId, List<Long> trackIds) {
+        require(playlistId);
+        if (trackIds == null || trackIds.isEmpty()) {
+            return 0;
+        }
+        int next = entryRepository.findTopByPlaylistIdOrderByPositionDesc(playlistId)
+                .map(e -> e.getPosition() + 1).orElse(1);
+        for (Long trackId : trackIds) {
+            PlaylistEntry entry = new PlaylistEntry();
+            entry.setPlaylistId(playlistId);
+            entry.setTrackId(trackId);
+            entry.setPosition(next++);
+            entryRepository.save(entry);
+        }
+        return trackIds.size();
+    }
+
     /** 删除条目并重排剩余 position（保持 1..n 连续）。 */
     @Transactional
     public void removeEntry(Long playlistId, Long entryId) {
