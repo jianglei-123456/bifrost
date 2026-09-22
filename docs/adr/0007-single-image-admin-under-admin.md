@@ -1,10 +1,12 @@
 # 单镜像：管理端 SPA 挂 `/admin/`，由后端托管；镜像只打包宿主构建好的 fat jar
 
+> **状态：accepted；仓库归属一处已被取代。** 本文关于**产物形态**的决策（单镜像、SPA 挂 `/admin/`、镜像只打包不构建、根命名空间保留 404）全部继续有效。唯一不再成立的是文中"管理端是独立仓库 `../bifrost-dashboard`"这一句——该工程已并入本仓库的 `bifrost-dashboard/` 子目录，见 [ADR-0010](0010-frontend-merged-into-core-repo.md)。下文保留 1.0.0 当时的原文语境。
+
 1.0.0 起，**Bifrost 的交付形态是一个镜像**：一个 JVM 进程、一个端口 `18080`，同时提供管理端页面与 Subsonic / OPDS / KOSync 协议服务。具体做法：管理端（Vue Dashboard，独立仓库 `../bifrost-dashboard`）以 `vite build --base=/admin/` 构建成静态产物，构建期拷进 `bifrost-bootstrap/src/main/resources/static/admin/`（gitignore），**打进 fat jar**；后端用一条资源处理器把它挂在 **`/admin/` 子路径**（未知的无扩展名路径回 `index.html`）；`/` 与 `/admin` 302 到 `/admin/`；其它未匹配的根路径**保持 404**。镜像本身**不做源码构建**（Status: accepted）。
 
 ## 理由
 
-1. **同源是管理端已经定死的约束**：dashboard 的 axios `baseURL: '/'`、Basic 凭据存 localStorage、401 走 `router.push`，其 ADR-0002 明确"生产部署走同源，后端保持零 CORS 配置"。单进程托管是这条约束最短的实现路径——不需要反代、不需要 CORS、不需要 cookie 策略。
+1. **同源是管理端已经定死的约束**：dashboard 的 axios `baseURL: '/'`、Basic 凭据存 localStorage、401 走 `router.push`，[ADR-0009](0009-auth-model.md) 明确"生产部署走同源，后端保持零 CORS 配置"。单进程托管是这条约束最短的实现路径——不需要反代、不需要 CORS、不需要 cookie 策略。
 2. **协议端点占着根命名空间，SPA 不能铺在根上**：`/rest/**`（Subsonic）、`/opds/**`（OPDS 1.2）、`/users`、`/syncs`、`/healthcheck`（KOSync）都在根路径。若 SPA 铺在根路径并把未知路径兜底成 `index.html`，客户端把 `/users/creat` 拼错就会拿到 **200 + 一页 HTML**——一个"看起来成功"的垃圾响应，排查成本极高。挂 `/admin/` 后，兜底的作用域被限制在 `/admin/**` 内，根命名空间的 404 语义原样保留（已有集成测试锁住这条：`AdminSpaIntegrationTest`）。
 3. **一个进程 = 一份日志、一份生命周期**：不需要 supervisor/s6 管两个进程，`docker stop` 的语义、日志落盘位置、健康检查都只有一个对象。双进程同容器还会把后端路由表在 nginx 里抄第二份。
 4. **镜像只打包、不构建**：Dockerfile 只做三件事——装 curl/tzdata、建非 root 用户、`COPY` 那个 fat jar。好处是镜像里不带 Maven/Node 工具链、不带依赖镜像源配置、不带任何凭据；构建失败的定位点也从"镜像内某一步"退回宿主上肉眼可见的两条命令（`vite build` / `mvnw verify`）。

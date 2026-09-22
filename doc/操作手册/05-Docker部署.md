@@ -2,7 +2,7 @@
 
 > Bifrost 1.0.0 起，**前后端打进同一个镜像**：一个 JVM 进程、一个端口 `18080`，
 > 同时提供管理端页面与 Subsonic / OPDS / KOSync 协议服务。
-> 形态与取舍见 [ADR-0007](../adr/0007-single-image-admin-under-admin.md)。
+> 形态与取舍见 [ADR-0007](../../docs/adr/0007-single-image-admin-under-admin.md)。
 
 本文是**命令清单**：镜像不在 CI 之外的任何地方自动构建，按 §1 依次执行即可。
 两条路线二选一或都走：
@@ -14,17 +14,29 @@
 
 | 项 | 要求 |
 | --- | --- |
-| 仓库布局 | `bifrost-core` 与 `bifrost-dashboard` 必须是**兄弟目录**（`../bifrost-dashboard`），管理端产物从那里来 |
+| 仓库布局 | 前后端在**同一个仓库**：管理端是仓库根下的 `bifrost-dashboard/` 子目录（2026 年由独立仓库并入，见 [ADR-0010](../../docs/adr/0010-frontend-merged-into-core-repo.md)）。构建脚本、jar、镜像都在仓库内闭环 |
 | 构建机 | Windows + WSL2 + Docker Desktop（本手册按 PowerShell 写）；JDK 21、Node 24、pnpm 11 |
 | 部署机 | Debian x86_64 + Docker Engine + compose 插件（`docker compose version` 可用） |
 | 端口 | 宿主 `18080` 不被占用（端口是契约：三类客户端的连接地址都按 18080 写） |
 
 ## 1. 本地构建一份镜像（PowerShell）
 
-### 1.1 管理端产物（在 `bifrost-dashboard` 目录）
+### 1.1 一条命令（推荐）
+
+在**仓库根**执行：
 
 ```powershell
-cd E:\Dev\jianglei\bifrost-dashboard
+.\build-image.ps1 -AppVersion 1.0.0
+```
+
+脚本依次做：`pnpm install --frozen-lockfile` → `vue-tsc -b` → `vite build --base=/admin/` → **基址守卫** → 把产物拷进 `bifrost-bootstrap/src/main/resources/static/admin/` → `mvnw clean verify` → `docker build`。
+下面 1.2 / 1.3 是同一件事的手工版，脚本出问题时用它定位。
+
+### 1.2 分步：管理端产物（在 `bifrost-dashboard` 目录）
+
+```powershell
+# 在仓库根执行
+cd .\bifrost-dashboard
 
 pnpm install                                   # 首次或依赖变更时
 pnpm exec vue-tsc -b                           # 类型检查（构建的一部分）
@@ -36,19 +48,19 @@ if (-not (Select-String -Path .\dist\index.html -Pattern '/admin/assets/' -Quiet
 }
 
 # 拷进后端资源目录：先清空再拷，避免上一版的旧哈希文件残留进 jar
-$target = 'E:\Dev\jianglei\bifrost-core\bifrost-bootstrap\src\main\resources\static\admin'
+$target = '..\bifrost-bootstrap\src\main\resources\static\admin'
 Remove-Item -Recurse -Force $target -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $target | Out-Null
 Copy-Item -Recurse -Force .\dist\* $target
 ```
 
 > `static/admin/` 已在 `.gitignore` 里（产物有 100+ 个带哈希的文件）。
-> 平时开发前端不用走这一步：`pnpm dev` 起 5173，代理 `/api`、`/rest`、`/opds` 到 18080。
+> 平时开发前端不用走这一步：在 `bifrost-dashboard/` 里 `pnpm dev` 起 5173，代理 `/api`、`/rest`、`/opds` 到 18080。
 
-### 1.2 后端 jar（在 `bifrost-core` 目录）
+### 1.3 分步：后端 jar（回到仓库根）
 
 ```powershell
-cd E:\Dev\jianglei\bifrost-core
+cd ..
 .\mvnw.cmd clean verify                        # 跑全部测试；产物：bifrost-bootstrap\target\bifrost-bootstrap-1.0.0.jar
 ```
 
@@ -58,7 +70,7 @@ cd E:\Dev\jianglei\bifrost-core
 jar tf bifrost-bootstrap\target\bifrost-bootstrap-1.0.0.jar | Select-String 'static/admin/index.html'
 ```
 
-### 1.3 打镜像（在 `bifrost-core` 目录）
+### 1.4 打镜像（仓库根）
 
 ```powershell
 docker build -f docker/Dockerfile `
@@ -75,7 +87,7 @@ docker build -f docker/Dockerfile `
 docker inspect ghcr.io/jianglei-123456/bifrost:1.0.0 --format '{{json .Config.Labels}}'
 ```
 
-### 1.4 本地冒烟（强烈建议）
+### 1.5 本地冒烟（强烈建议）
 
 ```powershell
 docker run --rm -d --name bifrost-smoke `
@@ -98,12 +110,12 @@ docker rm -f bifrost-smoke          # 冒烟完销毁（数据在匿名卷里，
 ## 2. 用 GitHub Actions 构建并推送（可选）
 
 `.github/workflows/release.yml`：推 `v*` tag（或手动 `workflow_dispatch`）时，
-checkout 两个仓库 → 构建管理端产物 → `mvnw clean verify` → `docker build` → **容器冒烟**
+构建管理端产物 → `mvnw clean verify` → `docker build` → **容器冒烟**
 → 推 `ghcr.io/jianglei-123456/bifrost:1.0.0` 与 `:latest`。
+（前后端已在同一个仓库，**只需一次 checkout、打一个 tag**。）
 
 ```powershell
-cd E:\Dev\jianglei\bifrost-dashboard ; git tag v1.0.0 ; git push origin v1.0.0
-cd E:\Dev\jianglei\bifrost-core      ; git tag v1.0.0 ; git push origin v1.0.0
+git tag v1.0.0 ; git push origin v1.0.0
 ```
 
 **首次推送后做一次可见性设置**（Ghcr 默认私有；要让部署机免登录 `docker compose pull`，
@@ -219,7 +231,7 @@ docker image prune -f          # 清旧镜像（可选）
 1. `bifrost-core`：`./mvnw versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false`（12 个 pom）；
 2. `bifrost-common/.../constant/BifrostVersion.java` 的 `VERSION`；
 3. `hurl/rest/system.hurl` 里 `serverVersion` 断言；
-4. `bifrost-dashboard/package.json` 的 `version`；
+4. `bifrost-dashboard/package.json` 的 `version`（前端与后端**发布号保持一致**，1.0.0 起同号）；
 5. `.github/workflows/release.yml` 的 `APP_VERSION`、`docker/docker-compose.yml` 的 `image:` tag、`docker/Dockerfile` 的 `APP_VERSION` 默认值；
 6. 文档里带版本号的坐标：`doc/技术设计/整体技术架构.md`；
-7. 两个仓库一起 `git tag vX.Y.Z && git push origin vX.Y.Z`。
+7. 打 tag：`git tag vX.Y.Z && git push origin vX.Y.Z`（**一个仓库一个 tag**）。

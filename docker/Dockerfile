@@ -1,8 +1,8 @@
 # Bifrost 单镜像：后端 fat jar（内含管理端产物）+ JRE（见 ADR-0007）
 #
 # 这个镜像是"纯打包"：不在镜像里跑 Maven / Node（决策见操作手册 05 §为什么不在镜像里构建）。
-# 构建前提（两步都在宿主完成）：
-#   1) 管理端产物：../bifrost-dashboard 构建 --base=/admin/ 后拷到
+# 构建前提（两步都在宿主完成；推荐直接跑仓库根的 .\build-image.ps1）：
+#   1) 管理端产物：bifrost-dashboard/ 构建 --base=/admin/ 后拷到
 #      bifrost-bootstrap/src/main/resources/static/admin/（该目录已 gitignore）
 #   2) 后端 jar：./mvnw clean verify  → bifrost-bootstrap/target/bifrost-bootstrap-*.jar
 #

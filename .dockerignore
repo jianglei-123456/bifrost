@@ -15,6 +15,17 @@ data-sample
 doc
 hurl
 
+# 管理端前端子工程：构建上下文只需要它的产物（产物已在 static/admin/ 里进 jar），
+# 源码/依赖/索引都不进上下文。**尤其 node_modules（约 300MB、2 万+ 文件）必须排除**，
+# 否则每次 docker build 都要把它整包传给 daemon。
+bifrost-dashboard/node_modules
+bifrost-dashboard/dist
+bifrost-dashboard/.codegraph
+bifrost-dashboard/src
+bifrost-dashboard/public
+bifrost-dashboard/docs
+bifrost-dashboard/README.md
+
 # 其它模块的产物（逐一列出，避免误伤 bifrost-bootstrap/target —— jar 在那里）
 bifrost-common/target
 bifrost-domain/target

@@ -2,13 +2,13 @@
 
 家庭媒体库管理平台：统一管理 **视频 / 音频（音乐）/ 电子书** 三类媒体资源。
 
-**里程碑 M1 ✅**：音乐管理 + **Subsonic 兼容协议服务（Syrinx）**——Bifrost 自身即 Subsonic 服务端，Feishin、DSub、Symfonium、play:Sub、Supersonic 等客户端可直接连接浏览、搜索、播放与管理音乐。管理端前端（Vue Dashboard）在独立项目开发，消费 `/api/**` REST 契约。
+**里程碑 M1 ✅**：音乐管理 + **Subsonic 兼容协议服务（Syrinx）**——Bifrost 自身即 Subsonic 服务端，Feishin、DSub、Symfonium、play:Sub、Supersonic 等客户端可直接连接浏览、搜索、播放与管理音乐。管理端前端（Vue Dashboard）是本仓库的 `bifrost-dashboard/` 子工程，消费 `/api/**` REST 契约。
 
 **里程碑 M2-book ✅**：图书管理 + **OPDS 1.2 协议发布**——KOReader（真机/模拟器）和 Readest（桌面/Web）可通过标准 OPDS catalog 浏览、搜索、下载 EPUB/PDF；管理端 `/api/book-roots` + `/api/books` 提供 CRUD + 扫描 + 元数据编辑 + 封面上传。图书侧与音乐侧物理隔开（独立实体、独立扫描器、独立封面存储、独立过滤器链，见 [ADR-0004](docs/adr/0004-book-physical-isolation.md)）。
 
 **里程碑 M3-sync ✅**：**阅读进度同步（KOSync）**——Bifrost 自己实现 KOReader 的进度同步协议（`/users/create`、`/users/auth`、`PUT /syncs/progress`、`GET /syncs/progress/:document`、`/healthcheck`，挂根路径），设备在 *Progress sync → Custom sync server* 填 `http://<host>:18080` 即可多端续读；服务端把客户端算出的**文档指纹**映射回库里的书，管理端 `/api/book-sync/**` 提供同步账号配置、进度列表、孤儿进度处理与设备列表。同步账号与管理员账号相互独立。设计见 [doc/m3-sync/](doc/m3-sync/task/00-总览.md) 与 [ADR-0006](docs/adr/0006-kosync-self-implemented.md)（自研而非集成官方 sync-server 的判断依据）。
 
-**1.0.0 发布（当前版本）**：M1 + M2-book + M3-sync 三个里程碑的合集，交付形态是**一个镜像**——管理端（Vue Dashboard，独立仓库 `../bifrost-dashboard`）与后端同镜像、同源部署在 `/admin/`，一个进程一个端口 `18080` 同时服务管理端与三类协议客户端（根命名空间完整留给 `/rest`、`/opds`、`/users`、`/syncs`、`/healthcheck`）。版本号唯一来源 `BifrostVersion`，`GET /api/version` 可查；形态与取舍见 [ADR-0007](docs/adr/0007-single-image-admin-under-admin.md)。
+**1.0.0 发布（当前版本）**：M1 + M2-book + M3-sync 三个里程碑的合集，交付形态是**一个镜像**——管理端（Vue Dashboard，本仓库 `bifrost-dashboard/` 子工程）与后端同镜像、同源部署在 `/admin/`，一个进程一个端口 `18080` 同时服务管理端与三类协议客户端（根命名空间完整留给 `/rest`、`/opds`、`/users`、`/syncs`、`/healthcheck`）。版本号唯一来源 `BifrostVersion`，`GET /api/version` 可查；形态与取舍见 [ADR-0007](docs/adr/0007-single-image-admin-under-admin.md)，管理端并入本仓库见 [ADR-0010](docs/adr/0010-frontend-merged-into-core-repo.md)。
 
 ## 技术栈
 
@@ -60,7 +60,8 @@ curl http://localhost:18080/opds/v1.2/catalog # → Atom OPDS navigation feed（
 ```
 
 管理端（Vue Dashboard）在浏览器里的地址是 **`http://localhost:18080/admin/`**（`/` 会 302 过去）。
-开发时也可以单独跑 `../bifrost-dashboard` 的 `pnpm dev`（5173，代理 `/api`、`/rest`、`/opds` 到 18080）。
+管理端改前端时单独跑 `pnpm dev`（在 `bifrost-dashboard/` 目录；5173，代理 `/api`、`/rest`、`/opds` 到 18080），见 [`bifrost-dashboard/README.md`](bifrost-dashboard/README.md)。
+出镜像用仓库根的 **`./build-image.ps1`**（一条命令：前端产物 → jar → 镜像）。
 
 数据目录（SQLite 数据库、封面缓存、日志、密钥）默认位于 `./data`，由 `bifrost.data.dir` 一个键统一决定
 （容器里用 `BIFROST_DATA_DIR=/data`），见[操作手册 05](doc/操作手册/05-Docker部署.md)。
@@ -84,11 +85,15 @@ powershell -File hurl\run.ps1              # hurl 端点契约测试（需 ffmpe
 ## Docker 部署（单镜像：后端 + 管理端）
 
 1.0.0 起前后端打进**一个镜像**：一个进程、一个端口 `18080`；`/`（302 → `/admin/`）是管理端，
-`/api/**`、`/rest/**`、`/opds/**` 与 KOSync 端点原样。设计与被否决的方案见 [ADR-0007](docs/adr/0007-single-image-admin-under-admin.md)。
+`/api/**`、`/rest/**`、`/opds/**` 与 KOSync 端点原样。设计与被否决的方案见 [ADR-0007](docs/adr/0007-single-image-admin-under-admin.md)，
+管理端并入本仓库的取舍见 [ADR-0010](docs/adr/0010-frontend-merged-into-core-repo.md)。
 
 ```bash
-# 1) 构建：先出管理端产物、再出 jar、最后打镜像（完整命令见操作手册 05 §1）
-./mvnw clean verify
+# 1) 一条命令出镜像（仓库根；内部依次跑前端产物 → jar → 镜像）
+./build-image.ps1 -Version 1.0.0
+
+# 或者分步（等价，完整命令见操作手册 05 §1）
+./mvnw clean verify        # 注意：这一步不会构建前端，见 build-image.ps1
 docker build -f docker/Dockerfile -t ghcr.io/jianglei-123456/bifrost:1.0.0 .
 
 # 2) 运行（首次启动必须给初始管理员口令）
@@ -116,7 +121,10 @@ docker run -d --name bifrost \
 | [操作手册 · 连接阅读器客户端](doc/操作手册/04-连接阅读器客户端.md) | **阅读器（Readest / KOReader）经 OPDS 连接 Bifrost 书库**：建图书目录与扫描、地址怎么填、分客户端步骤 |
 | [操作手册 · 常见问题](doc/操作手册/03-常见问题.md) | 连不上、认证失败 40、密码忘记、OPDS 404 等 FAQ |
 | [操作手册 · Docker 部署](doc/操作手册/05-Docker部署.md) | **单镜像构建/推送/部署的命令清单**：宿主构建、ghcr 推送、compose 起容器、首配库根、备份升级 |
+| [管理端（前端）README](bifrost-dashboard/README.md) | `bifrost-dashboard/` 子工程：开发/构建命令、目录结构、`/admin/` 基址约束、前端 ADR 索引 |
+| [管理端契约速查](bifrost-dashboard/docs/api-contract-notes.md) | 读后端源码不易看出的约定：信封/错误码、认证行为、若干"代码与旧文档不符"的坑 |
 | [ADR-0007 单镜像](docs/adr/0007-single-image-admin-under-admin.md) | 为什么管理端挂 `/admin/` 由后端托管、为什么镜像只打包不构建 |
+| [ADR-0010 管理端并入本仓库](docs/adr/0010-frontend-merged-into-core-repo.md) | 为什么前端从独立仓库搬进 `bifrost-dashboard/`、为什么构建仍独立 |
 | [项目整体功能说明](doc/功能设计/项目整体功能说明.md) | 产品定位、场景、功能地图、里程碑 |
 | [通用功能说明](doc/功能设计/通用功能说明.md) | 配置/日志/认证/持久化/REST 约定等公共能力 |
 | [音乐管理功能说明](doc/功能设计/音乐管理功能说明.md) | 音乐管理与 Subsonic 服务能力、客户端兼容矩阵 |

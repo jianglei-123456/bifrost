@@ -18,12 +18,15 @@
 /
 ├── CONTEXT.md
 ├── docs/
-│   ├── adr/          ← 0001–0007，跨模块决策
+│   ├── adr/          ← 0001–0010，跨模块决策（0008/0009 原属管理端仓库，0010 记录合并）
 │   └── agents/       ← 本目录：技能消费规则
-└── bifrost-*/        ← Maven 多模块（adapter / api / common / domain / bootstrap / core）
+├── bifrost-*/        ← Maven 多模块（adapter / api / common / domain / bootstrap / core）
+└── bifrost-dashboard/ ← 管理端前端（Vue）子工程，见其 README
 ```
 
-`bifrost-*` 是同一服务内部的 Maven 模块，**不是**多上下文：领域词汇只有一份，放在根 `CONTEXT.md`。
+`bifrost-*` 是同一服务内部的 Maven 模块，**不是**多上下文：领域词汇只有一份，放在根 `CONTEXT.md`，管理端专有词是该文件的 §管理端（前端）一节。
+
+`bifrost-dashboard/` 是同一个工程的前端子目录（不是第二个仓库、也不是第二个上下文）：它有自己的 README/设计文档，相对链接从该子目录出发；**不要**在它下面再建 `AGENTS.md`、`docs/agents/` 或 `CONTEXT.md`——规则与词汇只有根这一份。
 
 ## 使用词汇表的词汇
 

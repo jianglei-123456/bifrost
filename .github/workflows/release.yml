@@ -1,8 +1,10 @@
 name: release-image
 
 # 打 v* tag（或手动触发）→ 构建管理端产物 → 构建 jar → 构建单镜像 → 容器冒烟 → 推 ghcr.io
-# 镜像形态与理由见 docs/adr/0007-single-image-admin-under-admin.md；
-# 手工命令版见 doc/操作手册/05-Docker部署.md（本工作流与那份 runbook 做的是同一件事）。
+# 前后端在同一个仓库：**一次 checkout、一个 tag**（2026 年管理端由独立仓库并入，
+# 见 docs/adr/0010-frontend-merged-into-core-repo.md；镜像形态见 ADR-0007）。
+# 手工命令版见 doc/操作手册/05-Docker部署.md（本工作流与那份 runbook 做的是同一件事；
+# 本地等价入口是仓库根的 build-image.ps1）。
 
 on:
   push:
@@ -26,16 +28,8 @@ jobs:
   image:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout bifrost-core
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Checkout bifrost-dashboard（管理端产物来源）
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/bifrost-dashboard
-          path: bifrost-dashboard
-          # tag 触发时取同名 tag（两个仓库一起打 v1.0.0），手动触发时取 master
-          ref: ${{ github.event_name == 'push' && github.ref_name || 'master' }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -54,9 +48,12 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm exec vue-tsc -b
+          pnpm exec vitest run
           pnpm exec vite build --base=/admin/
           # 守卫：产物必须是 /admin/ 基址，否则打进 jar 的是一份根路径 UI（打开就白屏）
           grep -q '/admin/assets/' dist/index.html
+          # 先清空再拷，避免上一版的旧哈希文件残留进 jar
+          rm -rf ../bifrost-bootstrap/src/main/resources/static/admin
           mkdir -p ../bifrost-bootstrap/src/main/resources/static/admin
           cp -r dist/. ../bifrost-bootstrap/src/main/resources/static/admin/
 

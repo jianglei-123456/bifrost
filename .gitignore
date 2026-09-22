@@ -40,8 +40,18 @@ logs/
 data/
 
 # 管理端产物（dashboard 的 `vite build --base=/admin/` 生成后拷进来，构建镜像前才需要；
-# 产物有 100+ 个带哈希的文件，不进仓库，靠 README/操作手册 05 的命令复现）
+# 产物有 100+ 个带哈希的文件，不进仓库，靠 README/操作手册 05 或 `build-image.ps1` 复现）
 bifrost-bootstrap/src/main/resources/static/admin/
+
+# 管理端前端子工程（bifrost-dashboard/）：依赖、构建输出、覆盖率、代码索引都不进仓库。
+# 注意这些只写"目录名"的规则由该子目录自己的 .gitignore 承担过，现已统一收回根文件——
+# 根 `.gitignore` 的 `node_modules` / `dist` 等裸名规则不会匹配子目录，必须显式写全路径。
+bifrost-dashboard/node_modules/
+bifrost-dashboard/dist/
+bifrost-dashboard/dist-ssr/
+bifrost-dashboard/coverage/
+bifrost-dashboard/.codegraph/
+bifrost-dashboard/.vscode/
 
 # hurl 契约测试运行产物（样本音乐）
 data-sample/

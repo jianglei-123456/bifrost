@@ -129,10 +129,7 @@ _Avoid_: 图书同步（会被读成同步图书文件，那是 OPDS / WebDAV �
 ar-（艺术家）/ al-（专辑）/ tr-（曲目）/ pl-（歌单）+ 数字主键。
 
 **管理 REST（/api/**）**:
-管理契约端点集，供另一项目的 Vue Dashboard 消费；**根与扫描端点按媒体类型独立路径**（ADR-0005）：音乐侧 `/api/music-roots`（含 `/scan/all`、`/scan/status`），图书侧 `/api/book-roots`（含 `/scan/all`、`/scan/status`，详见 `doc/m2-book/task/03-管理REST.md`）；音乐浏览端点（`/api/artists` / `/api/albums` / `/api/tracks` / `/api/playlists` / `/api/search`）与图书浏览端点（`/api/books`）各自独立、互不混用。两侧共享的库根行由 `mediaType` 列隔离。
-
-**管理端工程（Vue Dashboard）**:
-管理端（登录页/登录态/过期时间等前端逻辑）位于本仓库的**兄弟目录** `../bifrost-dashboard`（相对本仓库根目录，勿记绝对路径）；后端提供 `/api/**` 契约，登录过期等需求改动落在该工程（见其 `docs/adr/0002-auth-model.md`）。1.0.0 起它的构建产物打进后端镜像、托管在 `/admin/`，但**工程本身仍是独立仓库、独立构建**（ADR-0007）。
+管理契约端点集，供本仓库管理端（`bifrost-dashboard/`）消费；**根与扫描端点按媒体类型独立路径**（ADR-0005）：音乐侧 `/api/music-roots`（含 `/scan/all`、`/scan/status`），图书侧 `/api/book-roots`（含 `/scan/all`、`/scan/status`，详见 `doc/m2-book/task/03-管理REST.md`）；音乐浏览端点（`/api/artists` / `/api/albums` / `/api/tracks` / `/api/playlists` / `/api/search`）与图书浏览端点（`/api/books`）各自独立、互不混用。两侧共享的库根行由 `mediaType` 列隔离。
 
 ## 阅读进度同步
 
@@ -161,3 +158,43 @@ _Avoid_: 客户端（太泛）、终端、阅读器（设备指实例，不是�
 **管理员（admin）**:
 当前唯一账号（User 表预留多用户），口令以 AES-GCM 可逆加密存储，以便 Subsonic 令牌校验还原明文。
 _Avoid_: 用户体系（当前版本无多用户）
+
+## 管理端（前端）
+
+前端专有词。共享的领域词（库根 / 曲目 / 专辑 / 图书 / 扫描 / 阅读进度……）一律以上文定义为准，此处不重复定义。
+
+**彩虹桥（Bifrost）**:
+品牌名，取北欧神话联通九界的彩虹桥之意，寓意平台联通音乐 / 影音 / 图书三类媒体。设计语言围绕"桥 · 联通"展开，媒体导航为三类预留分区（1.0.0 交付音乐与图书，影音预留）。设计与文案规范见 `bifrost-dashboard/docs/design.md`。
+_Avoid_: 桥梁（工程隐喻）、bifrost（代码名，不用于用户可见文案）
+
+**管理端（Dashboard）**:
+管理端前端工程（Vue Dashboard）：面向管理员的 Web 控制台，与消费 Subsonic 协议的第三方客户端（Feishin、DSub、Symfonium 等）相对。工程位于**本仓库根目录下的 `bifrost-dashboard/` 子目录**；后端以 `/api/**` 契约供其消费。1.0.0 起其构建产物随 fat jar 打进同一个镜像、由后端托管在 `/admin/`；源码与后端同仓库，但**构建仍独立**（前端可单独 `pnpm dev` / `pnpm build`，后端不装 Node 也能 `mvnw verify` 通过；出镜像用根目录 `build-image.ps1` 一条命令）。仓库归属与取舍见 ADR-0010，产物形态见 ADR-0007。
+_Avoid_: 后台、控制台（易与浏览器控制台混淆）；独立仓库、兄弟目录、`../bifrost-dashboard`（迁移前写法）
+
+**登录态（Sign-in）**:
+管理端**无服务端会话**：管理员口令由浏览器持有，每次请求附带 Basic 认证凭据；刷新页面保持登录，过期 / 退出 / 401 即清除。（凭据存放位置、有效期与令牌派生见 ADR-0009 与 `bifrost-dashboard/docs/api-contract-notes.md` §认证。）
+_Avoid_: 会话（暗示服务端 session）、登录（"登录"是动作）
+
+**总览（Overview）**:
+音乐库统计与扫描状态的仪表盘首页（"首页"一词指代不明，总览特指此页）。
+_Avoid_: 首页、Dashboard（歧义）
+
+**媒体浏览（Browse）**:
+按艺术家 / 专辑 / 曲目三层浏览媒体库的操作域；列表支持分页、搜索与索引分组过滤。
+_Avoid_: 媒体库（媒体库是数据本身，不是操作域）
+
+**音乐库页面（Music Library）**:
+管理面上「音乐目录管理」与「音乐扫描」**合一**的页面（路由 `/music-library`）：列出音乐目录、启停、增删改、单目录 / 全部扫描与上次统计。旧的「库根管理」+「扫描管理」双页已合并进此页。数据源 `/api/music-roots`。
+_Avoid_: 库根管理、扫描管理（旧双页命名）
+
+**图书库页面（Book Library）**:
+管理面上「图书目录管理」与「图书扫描」**合一**的页面（路由 `/books/roots`），与音乐库页面对称；图书扫描是异步的，进行中由顶栏下的扫描状态条提示。数据源 `/api/book-roots`。
+_Avoid_: 图书库根（旧名）
+
+**缺失曲目（Missing Track）**:
+沿用**缺失文件**定义（文件消失被隐藏的曲目），管理端在浏览列表中默认隐藏。当前**没有**显式的查看 / 清理入口——`/api/tracks` 不支持 `isAvailable` 过滤，需后端补参数后再增补入口。
+_Avoid_: 删除（删除是管理端对记录的显式清理动作，与缺失不同）
+
+**收藏与评分（Star & Rate）**:
+对曲目 / 专辑 / 艺术家三态收藏与 1–5 分评分的标注操作；评分 0 表示取消。
+_Avoid_: 喜欢、加星、打分（评分是领域词 rating 的展示形态）

@@ -8,7 +8,7 @@
 1. **命名要能自解释**：`/api/music-roots` 与 `/api/book-roots` 并列，边界一眼可见；`/api/library-roots` 与 `/api/book-roots` 并列，读者必须先搞清"library 是否包含 book"。
 2. **媒体边界必须能被契约测试钉住**：端点按类型拆分后，"音乐端点绝不碰图书目录"成了可在 hurl 里断言的事实，而不是靠注释约定。
 3. **共享层保持普适名是刻意的**：`LibraryRoot`/`library_root` 是 ADR-0004 明确的唯一共享点，"普适"在这里是正确描述而非历史包袱；给它加媒体前缀反而会撒谎。
-4. **改动成本可控**：`/api/**` 的唯一消费者是本项目的 Vue Dashboard（兄弟目录 `../bifrost-dashboard`），两仓库可同批次上线。
+4. **改动成本可控**：`/api/**` 的唯一消费者是本项目的 Vue Dashboard（即本仓库的 `bifrost-dashboard/` 子工程），前后端可同批次上线。
 
 **取舍**：破坏性 API 变更（旧路径 404，两仓库必须同步发布）。换来的是命名对称，以及**顺带收口媒体边界泄漏**——改动里共 11 处 mediaType 过滤/校验：音乐根列表与扫描状态只取 MUSIC（`MusicRootController`）、创建强制 MUSIC 且 PATCH 不接受改类型、删除只级联曲目、`MusicScanService.scanAll/scanRoot` 只处理或拒绝 MUSIC、`MusicScanStateResetRunner` 只重置 MUSIC，以及 Subsonic 的 `musicFolder`、用户 folder 列表、`lastModified`（含 `?musicFolderId=` 显式分支）与目录解析（`getMusicDirectory` 不再把图书目录当音乐目录打开）。
 
