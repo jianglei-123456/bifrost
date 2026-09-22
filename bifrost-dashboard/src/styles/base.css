@@ -1,0 +1,185 @@
+/* 全局基础样式 —— 设计系统见 docs/design.md 与 tokens.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background-color: var(--ink);
+  /* 极淡的紫色环境光，呼应光谱一端，不抢封面主角 */
+  background-image: radial-gradient(
+    1100px 520px at 72% -12%,
+    rgba(123, 108, 255, 0.09),
+    transparent 62%
+  );
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(123, 108, 255, 0.35);
+}
+
+/* 焦点环 = 光谱（签名元素的日常形态） */
+:focus-visible {
+  outline: 2px solid var(--spectrum-4);
+  outline-offset: 2px;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #232c3f;
+  border-radius: 5px;
+  border: 2px solid var(--ink);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 数据等宽：时长/码率/时间戳/ID（design.md §3） */
+.data-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 页面骨架 ── */
+.page {
+  padding: 24px 28px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  /* 入场动画不保留 fill（both/forwards 会在结束后残留 identity transform，
+     使 .page 成为 fixed 后代的包含块，弹层被裁剪到页面盒内 —— 见 #对话框截断） */
+  animation: page-in 0.22s ease;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.page-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.card-hover {
+  transition:
+    border-color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.card-hover:hover {
+  border-color: #2a3550;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* 光谱签名：细渐变线（design.md §5 的克制用法） */
+.spectrum-rule {
+  height: 2px;
+  border: 0;
+  background: var(--spectrum);
+  border-radius: 2px;
+  margin: 0;
+}
+
+/* 统计数字主角 */
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+/* 空状态引导（design.md §5/§7：空状态是邀请） */
+.empty-hint {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 48px 16px;
+}
+.empty-hint::after {
+  content: '';
+  display: block;
+  width: 96px;
+  height: 2px;
+  margin: 16px auto 0;
+  background: var(--spectrum);
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

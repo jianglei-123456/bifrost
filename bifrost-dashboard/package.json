@@ -1,0 +1,55 @@
+{
+  "name": "bifrost-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Bifrost 管理端（Vue Dashboard）——本仓库 bifrost-dashboard/ 子工程，产物托管在后端 /admin/",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --fix",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@vueuse/core": "^14.4.0",
+    "axios": "^1.19.0",
+    "blueimp-md5": "^2.19.0",
+    "echarts": "^6.1.0",
+    "element-plus": "^2.14.4",
+    "pinia": "^3.0.0",
+    "vue": "^3.5.41",
+    "vue-echarts": "^8.1.0",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/blueimp-md5": "^2.18.2",
+    "@types/node": "^26.2.0",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.10.0",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.9.6",
+    "sass": "^1.102.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.67.0",
+    "unplugin-auto-import": "^21.1.0",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0",
+    "vue-tsc": "^3.3.9"
+  }
+}

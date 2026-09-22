@@ -1,0 +1,592 @@
+{
+  "configurations": [
+    {
+      "args": [],
+      "confidence": "native",
+      "cwd": ".",
+      "disabled": false,
+      "env": {},
+      "execution": "application",
+      "extensions": {
+        "java": {
+          "source": "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/BifrostApplication.java",
+          "sourceSet": "main"
+        },
+        "maven": {
+          "mainClass": "com.bifrost.bootstrap.BifrostApplication",
+          "module": "bifrost-bootstrap"
+        }
+      },
+      "id": "java-main:com.bifrost.bootstrap.BifrostApplication",
+      "name": "BifrostApplication",
+      "provider": "java.main",
+      "source": "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/BifrostApplication.java",
+      "toolchains": {
+        "java": "project-jdk",
+        "maven": "project-maven"
+      }
+    },
+    {
+      "args": [],
+      "confidence": "native",
+      "cwd": ".",
+      "debug": {
+        "adapter": "jdwp"
+      },
+      "disabled": false,
+      "env": {},
+      "execution": "application",
+      "extensions": {
+        "maven": {
+          "module": "."
+        }
+      },
+      "id": "current-file",
+      "name": "Current File",
+      "provider": "java.current-file",
+      "toolchains": {
+        "java": "project-jdk"
+      }
+    },
+    {
+      "args": [],
+      "confidence": "declared",
+      "cwd": ".",
+      "debug": {
+        "adapter": "jdwp"
+      },
+      "disabled": false,
+      "env": {},
+      "execution": "service",
+      "extensions": {
+        "java": {
+          "source": "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/BifrostApplication.java"
+        },
+        "maven": {
+          "mainClass": "com.bifrost.bootstrap.BifrostApplication",
+          "module": "bifrost-bootstrap"
+        }
+      },
+      "id": "spring-boot.maven:bifrost-bootstrap",
+      "name": "bifrost-bootstrap",
+      "provider": "spring-boot.maven",
+      "source": "bifrost-bootstrap/pom.xml",
+      "toolchains": {
+        "java": "project-jdk",
+        "maven": "project-maven"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "build"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "build"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/build",
+      "name": "build",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "dev"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "service",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "dev",
+          "server": "vite"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/dev",
+      "name": "dev",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "format"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "format"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/format",
+      "name": "format",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "lint"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "lint"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/lint",
+      "name": "lint",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "preview"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "service",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "preview",
+          "server": "vite"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/preview",
+      "name": "preview",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "test"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "test"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/test",
+      "name": "test",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "test:watch"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "test:watch"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/test:watch",
+      "name": "test:watch",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "type-check"
+      ],
+      "command": "pnpm",
+      "confidence": "declared",
+      "cwd": "bifrost-dashboard",
+      "disabled": false,
+      "env": {},
+      "execution": "task",
+      "extensions": {
+        "npm": {
+          "framework": "vue",
+          "manager": "pnpm",
+          "script": "type-check"
+        }
+      },
+      "id": "npm.script:bifrost-dashboard/type-check",
+      "name": "type-check",
+      "provider": "npm.script",
+      "source": "bifrost-dashboard/package.json",
+      "toolchains": {
+        "runtime": "project-node"
+      }
+    },
+    {
+      "args": [
+        "compose",
+        "-f",
+        "docker-compose.yml",
+        "up",
+        "bifrost"
+      ],
+      "category": "infrastructure",
+      "command": "docker",
+      "confidence": "declared",
+      "cwd": "docker",
+      "disabled": false,
+      "env": {},
+      "execution": "service",
+      "extensions": {
+        "compose": {
+          "file": "docker-compose.yml",
+          "service": "bifrost"
+        }
+      },
+      "id": "compose.service:docker/bifrost",
+      "name": "bifrost",
+      "provider": "compose.service",
+      "source": "docker/docker-compose.yml",
+      "toolchains": {}
+    },
+    {
+      "args": [
+        "compose",
+        "-f",
+        "docker-compose.yml",
+        "up"
+      ],
+      "category": "infrastructure",
+      "command": "docker",
+      "confidence": "declared",
+      "cwd": "docker",
+      "disabled": false,
+      "env": {},
+      "execution": "service",
+      "extensions": {
+        "compose": {
+          "file": "docker-compose.yml"
+        }
+      },
+      "id": "compose.stack:docker/compose up",
+      "name": "compose up",
+      "provider": "compose.stack",
+      "source": "docker/docker-compose.yml",
+      "toolchains": {}
+    }
+  ],
+  "generator": {
+    "fingerprint": "sha256:0ca211b5dfe81f9ff9094df47dcaffe55a243f6ee91058df838d457f753630bc",
+    "inputs": {
+      ".mvn/wrapper/maven-wrapper.properties": "sha256:391aef840b13fd7a6bed51f10d79893aebde898a77c09fe1d6cbe85e0fc038d6",
+      "bifrost-adapter/jellyfin-client/pom.xml": "sha256:8cb5d24fd4f1bdf6e94d33413b8bb95baff4bc28454378915828d2b400658c6a",
+      "bifrost-adapter/jellyfin-client/src/main/java/com/bifrost/adapter/jellyfin/package-info.java": "sha256:f75d9aadd083af1eae383ff1f6271c785f1dd6874874ef63537bb09551f14baf",
+      "bifrost-adapter/kosync-server/pom.xml": "sha256:d3804d520c8fc85143cee390573a8bd7ca69fd4868d18132a6a999b4a91e3713",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/KosyncAuthAttributes.java": "sha256:7cb0cec06bab4c3f466615e075e77331972bfab2f1a7b9c80444dee9153dd0e9",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/KosyncConstants.java": "sha256:39d10f1d18c837a94bbde6ce949c367f703c4fb4ddeee60d216d92d4d46f6085",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/KosyncException.java": "sha256:17689fb92e1087bc341b098b2b340e104e430a33f96b84aba91f8090461c4336",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/KosyncExceptionHandler.java": "sha256:dcdf8a7d47c9dd4bea8a78df16280faf3d9c684b6d94d63bce62e3650002e77d",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/controller/KosyncController.java": "sha256:45353e8a855e87337b23c618e10179ab953215188f7421a93b7909b61ef4c454",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/AuthorizedResponse.java": "sha256:fe566e98fe1e13477320f107a8e9ee336462176a82a05ff6f3955c2b86b2bd31",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/CreateUserRequest.java": "sha256:0e35c0fcb6b1e3593228d122c6d3279c8d6720f0e96a23dedecbbd4ac7c61e9b",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/HealthResponse.java": "sha256:9079d7d8088547a7ef02be5be848d974e89afa2af4c9f5511dd55049299b9d31",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/KosyncErrorResponse.java": "sha256:44ee65a89911a9af534946e98cf61e158422cd52026885346ee84f95d87d2cc4",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/ProgressGetResponse.java": "sha256:bd26039e7ed3d2e3cb422344d8d214e4505b3c577d9690bffeeb1ae1f6df93cb",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/ProgressPutRequest.java": "sha256:bebc6e6b011e22068a328d45e6af5c591a475f9bf9d869b4f966eb66cdc81c83",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/ProgressPutResponse.java": "sha256:4735675d1e4602a434ba1072181ba91cc2bc33fbaede02142484cb08a042faed",
+      "bifrost-adapter/kosync-server/src/main/java/com/bifrost/adapter/kosync/dto/UserCreatedResponse.java": "sha256:bacffd3cc3ae33f762d5965e8125272ad1d4fb5eef191e613793869911c93fc3",
+      "bifrost-adapter/opds-publisher/pom.xml": "sha256:f278c350c550adbd14c144287dc70a4c469f4609bfd688005e2758344cf10d03",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/BookNotFoundException.java": "sha256:bb55bad9e6ce52444df49568398b0613c6c86f67100f78e3bb8fe14811f4c2c2",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/OpdsConstants.java": "sha256:47cfa573cc18829da9e95d5c3e375d6124d06b7c6bfa6a8322aafbe0db85c4a6",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/OpdsExceptionHandler.java": "sha256:f54c5ecf625b5f7cb2dc84b2f126dd10297cd8bc7e7e137cc4ef5114f79fe825",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/controller/OpdsController.java": "sha256:e7f1e1624e90d35561d3c7d22e2b0894310f821c2c07db28ea510d20028c0bea",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/package-info.java": "sha256:772797f122b4f79cab295747c3468142894c1690a550436e1df8519b712d7789",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/service/OpdsBookQueryService.java": "sha256:080cb779d8a0effe287dff09f0420f065201dc0cc136be7a04b8f483946ad7b7",
+      "bifrost-adapter/opds-publisher/src/main/java/com/bifrost/adapter/opds/service/OpdsFeedBuilder.java": "sha256:b6e4e213541fb39093e90b726f8b874ddaaca4954ae9b2e0a083894c82b856c9",
+      "bifrost-adapter/opds-publisher/src/test/java/com/bifrost/adapter/opds/service/OpdsFeedBuilderTest.java": "sha256:d66357264b608e1b6312e30bdc16067bd1450aa09fdbec027498bec8a11d3524",
+      "bifrost-adapter/pom.xml": "sha256:40c3309b706f076fb52b31098fda27be1fb4086e7d4a5ba60eeb92f306359e08",
+      "bifrost-adapter/syrinx/pom.xml": "sha256:b2c7dab9ec59a3b54d928caa332ab6d28024c6ef3b4f9399991f6aa0476537a6",
+      "bifrost-adapter/syrinx/subsonic-api/pom.xml": "sha256:ffcd6629c1d4f1ad6f5f12bbb5bf658fe392e7dde9c7c3b7a676883f8f8b83e1",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/SubsonicAuthAttributes.java": "sha256:d92d5ff345db2fdf7e813adad58d2046cb16af01dcd6db2837a0a2d2f740d177",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/SubsonicController.java": "sha256:31b43b3ad85e653d353fee0bcd8fd105118ea3e34f419f8d8295cec80d1e8763",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/SubsonicExceptionHandler.java": "sha256:08d269080d730a2abce940a283ab39a23c07599c9d4e21d4fdf05c96aacc98b7",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/SubsonicIds.java": "sha256:db09d228a5218a10c1edd3fa0b265cea53bd909a70a509d6816043cbb444ca5d",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/SubsonicRenderer.java": "sha256:fb3845636f7b7bf485d31faa15c7992fcd0a5bcd2d08a7f38edeaa1789f210bc",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/AlbumID3.java": "sha256:bea79089db9f9fbf9e64d5bb044f7f50b4d800207c6b1388af01c9329cc02055",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/AlbumList.java": "sha256:f7da5d2bd57814535da237a740beb3643a914c36cdb8716e220c2f23596b048f",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/AlbumList2.java": "sha256:8870b214b3fa88dff5c973cb694cf422b66e77335eb040766a4079e4e808dad6",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/ArtistID3.java": "sha256:044ca321a607a5e3d0d234398ef82ecefbcc2dc3fb363df4b953f10d39767b4d",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Artists.java": "sha256:dfc7fb37db27ec07e911a57c840c6061391689e4f18f04f720aa600575373549",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Bookmarks.java": "sha256:05d2eeea71fe19614545c6c06e9b55d6b4523ad112eb1b8edb92add35f43bdbf",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Child.java": "sha256:409e9faedea9ec66d76a98b793caace89d4dc07b19ab10fab146fc80b0b1c400",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Directory.java": "sha256:9ad4b819ad52f98533067a39802ac252336cc235433b067ae882cb1dfcbb26ff",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Error.java": "sha256:b8986c3b8af4f092f01bc505b29527460b3b883ef51ceb5df2de68d8c4fd8322",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Indexes.java": "sha256:62d445549dd9c78ecbed9b4d8aea1df5c4b696f7b95e6ba3d7d60858e01cad29",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/License.java": "sha256:e40cbf152863693ad67ef1965174acc2e10f7b1411d1b6db03d3790cf1712e96",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Lyrics.java": "sha256:94eef165cf7bb0c388e88ac7ad4fb5a429c1067de874d1531fc84cbc109c5a10",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/LyricsList.java": "sha256:7a939cced0ffab0b3a89f29c1473a666de9b17bdcb8d18814baa1a4db2c6c9b5",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/MusicFolders.java": "sha256:1c8782ee9b0dabf0ac4aeb1c68edf4a2f675a7352be0a1f429135a70250a9789",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/NowPlaying.java": "sha256:89d068c8fae8589ca3e7ffdf3f5eac572b032d97befa38ff03d123726680d283",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/OpenSubsonicExtensions.java": "sha256:de196e963e1407a9ed6ce098cf6ac08b6fb8842a6077fa20d93d8252e063a14b",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/PlayQueue.java": "sha256:0e6900b15c6c867c56a23e3d6f1fcb2a38465c2a2b0c4bd31b137aac5f3a9862",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Playlist.java": "sha256:299cef3bc4bc1dc920dedb5522402599fbbd309aa51dfa425537119ec22f9229",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Playlists.java": "sha256:01c720b55a4d4c95e0b6b563f3b1e3226164153ee3f69c7830257d9c1b6b2dfb",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/RandomSongs.java": "sha256:eb680f5f9ee81675c608d4ff70511bb4ac9cacd7721fce9907694c13f36dab92",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/ScanStatus.java": "sha256:5589b0cc4b33b51ff63ac4099d3c22db93fe646bf64a5e10766d6e10ec5dc33f",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/SearchResult2.java": "sha256:f99c953fbb3e264f80a0b4bcbf059a615f73dd910b8baab3a0fe964fc725a8bd",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/SearchResult3.java": "sha256:25ebcb514729a96d1a5b2fc5baebe759bbd9b63ecd4a47f4014657c8e5a0e631",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Starred.java": "sha256:0c8c5ee91de5cba37b936816e21bdcdeecf0406e0bf02c8c1d0122cf99ea5af2",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Starred2.java": "sha256:6845bae0b16ea239e2a9bf1d5e8d74a1b78368fdb04dd3b5a509f301bb6076c5",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/SubsonicResponse.java": "sha256:decfd57339f5475043dd9a68588781d86cbc12e80f27b5d54490d07249afed65",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/User.java": "sha256:6225354074a9d90757999b142a94d20fd9728d75ce44a13c639f464f0cf7ae3c",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/dto/Users.java": "sha256:b05327d188f68a0b8c5c49b8c2b003410e4d8656f1dcfca481e6520b344d454b",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/service/MusicScanCompletedEventListener.java": "sha256:c9dfd1e91e75bd7d507cdd552fd09e640d71e58b6e9a6c2367d1f1d74aa9d08b",
+      "bifrost-adapter/syrinx/subsonic-api/src/main/java/com/bifrost/adapter/syrinx/subsonic/service/SubsonicAssembler.java": "sha256:56eeef8da11bcc5b24e644391dc6ae09964ada201a9b29bd88ed617d31c3ad2c",
+      "bifrost-api/pom.xml": "sha256:f2ded0a6bf34d90cc5b16cd67c65ee710009c332a1e0648e0c1af077cbb239e5",
+      "bifrost-api/src/main/java/com/bifrost/api/PingController.java": "sha256:07ab988377b7baf5b743505d101696fefa22491579845ec3dc57b5c89375f69f",
+      "bifrost-api/src/main/java/com/bifrost/api/VersionController.java": "sha256:113af658dbe205fb3b990626e9347139ed79f11100630baf7b5567f4e094c9dd",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/AnnotationController.java": "sha256:d3cf8001838789f185f53d3ffe4bdb88e83fa78f7bce6fec86d9eec37a943ea4",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookController.java": "sha256:1f55806ebabe907a05831a0112a2ffc730fb379aed38654eb147f5573498fe34",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookCoverController.java": "sha256:688eaa0230b4f3d659909eab2ced841d5b14ecd2da4339087dbf5b61c6390c64",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookRootController.java": "sha256:e1441ce509a54744421113918bf8da7aa4a8f167592b2e6194cc37ee234dcea0",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookSyncAccountController.java": "sha256:9b3afe7fc176a85268f316ab41d90240990e208fc1d9c671ae58bacce6f2925f",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookSyncDeviceController.java": "sha256:ef7cf8ea853f4e2a46c5c785a3a9c86a4cd5d90b2bd461eb3e71a083598376d7",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookSyncOrphanController.java": "sha256:ae638de78c8726f15ed3cd9eb3dd88cedb80c00db372e674ab55fc8c5e6d1fb5",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookSyncPaging.java": "sha256:8cedb7b4419e7f5ea34c11127957c746f464304a1cd8fc69e17a7fd25bde9ef2",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BookSyncProgressController.java": "sha256:a59124273b56cc86ae2102faaaeb1ad11171a1facf07ce43713a6d6447150a57",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/BrowseController.java": "sha256:e46462ec300e0f26ca0d6addb165a896da38fdd965481ff0dd08173c17cfde30",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/MusicRootController.java": "sha256:6070189de8d9cf7b6c5403f0a2fa44a3ace377d50f3466f2ca0a4bcf4e622f97",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/PlaylistsController.java": "sha256:a2eaf1a25fed22a715fc41534271d27999916482a9f1f8e23a3e2c4bfaa40dcc",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/SearchController.java": "sha256:04c8874a8445172b750127cc102368172ceee59902ca8d605f9de9a94ad38ba2",
+      "bifrost-api/src/main/java/com/bifrost/api/controller/UserController.java": "sha256:b256fb4ce26b136beca0353c7b093d4de5298139292cae1a2988c6a291593b26",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/ArtistView.java": "sha256:944afa89239cacd07f0b4aa114bfe1380438032853ae7c62ee46eac22dcb0ca6",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/PlaylistDetailView.java": "sha256:e5ed5bafe4bfef1d6173c8bdaf9567611b5a7ca6069a8c3bd156e4d711abb45a",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/book/BookDto.java": "sha256:70bd9a1e8ec69f0eae93dac7b80328caec51cd21825814bee4309825bcf84e64",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/book/BookRootDto.java": "sha256:5e896beb21a7fd34f0e4ed4aa1d035a9efd7cf284430634111a0d09cf3628880",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/BookSyncStatsView.java": "sha256:b3f84a458045d2470c8b2278963e1e52589174f46dc73244bfc297a7c7a86d4f",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/OrphanProgressView.java": "sha256:45d60a42f1c1edc7c05a9dcaaa6fe0837e8dc56321e2f33c6041c6bccb97e976",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/ReadingProgressView.java": "sha256:7b60c4ab736474dd8cc4f095ce4e82c077d54888238ac784442d829b7c35747f",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/RematchView.java": "sha256:c16eb8f34d82d9d40350ca6ce93bd13487e8e2b96fbd2ac2adf5d709ad2b3f82",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/SyncAccountView.java": "sha256:778d6aa97d4495ccb5595ae74a3bcf2d66d598fcb40d4ea8ec8279ac0029c11d",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/booksync/SyncDeviceView.java": "sha256:2c6e9b3145b50176459d82b7d2df2568c7a4f97ec67b0874cb41976b69cc8110",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/music/MusicRootDto.java": "sha256:d9265317056b098cc3501e18e2b083b22e022828efa09457b05eb4194e32c59e",
+      "bifrost-api/src/main/java/com/bifrost/api/dto/music/MusicScanStatusView.java": "sha256:10d59f1cfa4e0c18bd2ab3569bd826abb935e031cc5b3957881b7722dd3a3be9",
+      "bifrost-api/src/main/java/com/bifrost/api/exception/GlobalExceptionHandler.java": "sha256:99058da60b017f28f1ad5e812bfbdb0ef7668613ef6a3c581f03177051a60779",
+      "bifrost-api/src/main/java/com/bifrost/api/exception/UploadSizeExceptionHandler.java": "sha256:4a7f1e0bd17255429a16b5b69c5a98448522ede7b0b93a1ab7da7c62e2cfab16",
+      "bifrost-api/src/main/java/com/bifrost/api/package-info.java": "sha256:79f55da248fcf21ff511c48c53ce2f3bc6c5fca3ff14f591ec6abeb979d276a0",
+      "bifrost-api/src/main/java/com/bifrost/api/response/ApiResponse.java": "sha256:ef994e4c9abb23ec363851e3136f46e10b330389f656c246357a148c71410373",
+      "bifrost-api/src/main/java/com/bifrost/api/response/PageResult.java": "sha256:461d0fb9bd3d883902da1725dc48a646bea75113af0220daf09853e8597576e0",
+      "bifrost-bootstrap/pom.xml": "sha256:1396fe3e966ffb1f24af0c52ef62f8606250d5f3f49eb732556d7601cde6e5db",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/BifrostApplication.java": "sha256:b975087cc6955720d6e4cabb34cb7ad772ec81fc8f742d7ad115ae682a1dbd7a",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/DatabaseCheckRunner.java": "sha256:9d93e676ef3ceae706b1bd58a4b11d0546e9083ae09237a2cb131fe8f03ca9cb",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/config/SqliteDataSourceConfig.java": "sha256:1ae327ebe38f1d8caa45586a122f5ccfa0bce445b8ede8496c67de05a836f972",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/ApiAuthenticationFilter.java": "sha256:b69a0084778a48406bd2a319403baad8127395c81b1b059b8e8d434b7483849f",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/KosyncAuthenticationFilter.java": "sha256:6d02d11012e0995d81374f2bbc026ea2e2643d77b32dd4440ca38b93b6a1cf12",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/KosyncSecurityConfig.java": "sha256:4f933b56717766c60ed6679375f2580aedc9a520389f045366f706d558aa50c4",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/OpdsSecurityConfig.java": "sha256:d4d780db03bb2233d91dcf643e1dbc00e4455b97326d39396783e002f9093e1a",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/SecurityConfig.java": "sha256:b4e7a4f7e258c3a8215fb36b5c256786075324494c41753d5bb3962fc03f3eff",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/security/SubsonicAuthenticationFilter.java": "sha256:4b913708dedf0056c305cbc3e2d5ada5d35d6fe261db4c232bbce67c612c7bfe",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/web/AdminEntryController.java": "sha256:ca9b4eb4e42a0939e591236b5c41f31aab34e4d152ccec34d9d13cb9c2bcd54d",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/web/AdminWebConfig.java": "sha256:4ed5545b0b02056269ba475bf270ade35b1d97de555788766c3f7c64fdd3f3ad",
+      "bifrost-bootstrap/src/main/java/com/bifrost/bootstrap/web/RequestLoggingFilter.java": "sha256:78e6564a68cb0b061c1851c7db662f6ec4875a854351e2fcc6ad8c2653516a5d",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/AdminSpaIntegrationTest.java": "sha256:7a3bee9d4c426e0231f0eec0ae1829a274a37a37a0a836c4477f446bd59d39ac",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/AuthIntegrationTest.java": "sha256:7a77e904d54e2455f709eebd4150e43253d74f44eeb95726e81603d89dd410c6",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/BifrostApplicationTest.java": "sha256:6c9e3c4ca62e86d4ad194bdaa01298c1d0a60babd27a1a7eb8a9da613b2b3798",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/BookScanIntegrationTest.java": "sha256:4798d45b659875e6da13027a9a16e054f9a41e1d3daa023f9a7a087ec213ac20",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/BookSyncAdminIntegrationTest.java": "sha256:8ed2c1ba2dc916909158675c7947d8f39c334fc29e57bcdc948a11f8e0ccff8f",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/KosyncDisabledIntegrationTest.java": "sha256:e46588adb0eb69af25cb6c7b21a35a55fd4e31c59a9d07600f1ad4b3e753ee77",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/KosyncProtocolIntegrationTest.java": "sha256:ccdbfecd6163945a66f4981d37a6f5de56576718365b6cfffa69108ddd0f7d8c",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/KosyncRegistrationDisabledIntegrationTest.java": "sha256:879d46af2bc6585a4e18bd39c5878d36fcc9c0692ffdfb47dbb017af1e930f5a",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/ManagementApiIntegrationTest.java": "sha256:6af66160be080f85f55a35bb6387137a63726abf478379af089d7f4c124e8dbf",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/MiniMediaFactory.java": "sha256:63d39c01380399d3e96903038bb1d625152c14cd7302fc6f8dd64638d36a9996",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/RequestLoggingFilterTest.java": "sha256:99a370b49e70241468b4244e2eee2914c2971fbb33c35d706fe17b577fc080e9",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/RequestLoggingIntegrationTest.java": "sha256:38ec0d44a61d6fba74179799549d8b32dc2f7610b2a4cb325ba6924b88f40f47",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/ScanIntegrationTest.java": "sha256:5a7405585a368e9427f5a0f501d0d5762a95ba2e7069a66100b2934a492c3670",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/SubsonicIntegrationTest.java": "sha256:249cbad2016d41ac664049f4b2975b78a9cac7b65cc491a9011127241617c0b2",
+      "bifrost-bootstrap/src/test/java/com/bifrost/bootstrap/VersionApiIntegrationTest.java": "sha256:e337206e6823a0b84d3d55521094354b4add55bfb74d94a595d0363f1c705a4a",
+      "bifrost-common/pom.xml": "sha256:cf7a63df21bfe683e557a1fd014d12d3aabf3e47a8bf41e6346ed9c98734f074",
+      "bifrost-common/src/main/java/com/bifrost/common/constant/BifrostVersion.java": "sha256:fdea33352a12986d35cf0fe19cec0a96a43e98a18875d5e0ed2afa8734bbc9e5",
+      "bifrost-common/src/main/java/com/bifrost/common/constant/ErrorCodes.java": "sha256:255ce06b7b4ca346336fbadabfb9e87000c533239b55464033ea7af9a9053d70",
+      "bifrost-common/src/main/java/com/bifrost/common/exception/BizException.java": "sha256:f97ff22829e4133f5defb32b32dd82f54e6c748b115e18b3a20d46f3ede8d46f",
+      "bifrost-common/src/main/java/com/bifrost/common/package-info.java": "sha256:a1888e6c6e029526c640352e4775050dd6eb96b93748ef6142516f6f8df509d7",
+      "bifrost-common/src/main/java/com/bifrost/common/util/Dates.java": "sha256:5257ab7b4c2bc35bdde4829ffd2802d6e6f89be64b10b92d15b4bcddf8a8c411",
+      "bifrost-common/src/main/java/com/bifrost/common/util/FileIO.java": "sha256:1cf93a158c0cac74ed8bedcb69bbac7e541defe2493ff1cc739f6c9e7775288d",
+      "bifrost-common/src/main/java/com/bifrost/common/util/Fingerprint.java": "sha256:bef9a7c3b3ae3a9a1072788bbc4340ea98b526bba404d6d582ac51d188703515",
+      "bifrost-common/src/main/java/com/bifrost/common/util/Strings.java": "sha256:5077588c9cd535658a5eabcbfde220018b9db8bf83e03c96a62d932dd3659d4c",
+      "bifrost-core/pom.xml": "sha256:08fabf6d739bbce049ca37a290b9499008a69838fd6a92b88b188dae1a8450d9",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/AggregationService.java": "sha256:c3313990e96360705ca606028eb6ee21932df4e8feafbb97d8e38741b3af1bf5",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/AlbumKey.java": "sha256:6fc96fa0c0dda72cfa61f09c7c6e80cdd2a79f35ba8df468a6ad7620624de536",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/AudioTagParser.java": "sha256:e8f43b88e7209ce2531b82846fe736e87e9e68702235a66ff27213fa1b5e0a30",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/CoverService.java": "sha256:f741479d97036746bf5a0c95dd934497c28d0cdd29f990f4b950df7a74b776a7",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/MusicScanService.java": "sha256:29ebb93acb131cf71ea724b8bbaf8748490758b86273f7c48adc667c3508d4f8",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/MusicScanStateResetRunner.java": "sha256:22c7540780696893f2a55aa52fd361dca3e1c87fb62a22b9f2075a3d5953b912",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/PinyinIndex.java": "sha256:ec0b824370d04b3a577dd8596353f6348636d6c696b8c91595cf933ebf47af3c",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/UnknownAlbum.java": "sha256:58bdf619f1c1e8d2d6a3dc609e50833a96917ecb6f9dbf39cebddd8759eefc05",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/UnknownArtist.java": "sha256:4d6bc727186f638ff12572d51be64b4faac957a9af6910f188f0ed4701f33927",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/model/AlbumListType.java": "sha256:9232c19e213ab79b0cc63f18ffc464d8cdbad2c61da152a8b70d14a7bd713be4",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/model/TagResult.java": "sha256:da9ef9f6adf04f571cda32436b4692ab81b52cf713dd9201f5518fca9e526663",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/package-info.java": "sha256:1cd1aca9dd2fbb81421fb58e0901a31e81aaeaa22c1de7150feb85930067eaed",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/AnnotationService.java": "sha256:4b10f644aa36e34b4feb56233f966f1e47c8d943fcd9e5a9984d00762972c562",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/BookmarkService.java": "sha256:3871211894db529ae579f1dc552002cf1db272f8b07d64541cea836e163c381e",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/LibraryQueryService.java": "sha256:1d1c5d18345da34e56e88d0b05055a979c1aeab5f07a72666c0dcef51ab9dc63",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/NowPlayingService.java": "sha256:7216bda489fe837cd13ddce3c28af67667cb467b5a0f8d7d4203276712061ace",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/PlayQueueService.java": "sha256:0c109a6ab31523d0e82e1c4dac8181bde7804197381d15ed66b9dc47396aba75",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/PlaylistService.java": "sha256:c9f21675ce6095ba88aa63f98ef68606d7f45168827b68ae22d3cca111d74cc6",
+      "bifrost-core/src/main/java/com/bifrost/core/audio/service/ScrobbleService.java": "sha256:8e6663f5f67430719f678c4d4de0c0b5d560fc1d53c9c625246e2356c9af06e7",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookCoverService.java": "sha256:43bfef85258072e81df523a7bde2127a757c7a367f1802b6ca599804edda4657",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookParser.java": "sha256:2ac0e431d411399f94089c1cd633532eed1dc2176d356d95d70d3a59cd390fc6",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookParserRegistry.java": "sha256:2296c3b7e29b964622de7bbf66f9ff9972f775cac9d3c77819e9d74c8c13cfe7",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookPartialMd5BackfillRunner.java": "sha256:55730e58d6423af9fb6a156a99ec31b3113b2f7a3fe6916ef09e9fa800c7e3fc",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookScanService.java": "sha256:b261f9ea91c55e8efe28ea581ed4de64cec8b3e104659ec9cc3c42da574ae554",
+      "bifrost-core/src/main/java/com/bifrost/core/book/BookScanStateResetRunner.java": "sha256:2bec2acb6dc926ec2827adfd52c01c0f9ea659c908bd715e1589bd5fbd66df7d",
+      "bifrost-core/src/main/java/com/bifrost/core/book/DocumentFingerprint.java": "sha256:f915f391652f4f26044ef855ab289ecd313d5c89592ed5b9bef0a5d8b47080c6",
+      "bifrost-core/src/main/java/com/bifrost/core/book/EpubBookParser.java": "sha256:9799fe90c5149d9d0bbdb20a1d339d584cfda20bd754913ad9e251b438248b62",
+      "bifrost-core/src/main/java/com/bifrost/core/book/LibraryRootMediaTypeBackfillRunner.java": "sha256:46565c16f2339c491ea7be064e0c6b27b8bc1d33813ac463115e489e2330c825",
+      "bifrost-core/src/main/java/com/bifrost/core/book/PdfBookParser.java": "sha256:c2e40a9545bf2a72173d6010e133d61c55c6ecbd0b5ba2b0cfdce82e175547a4",
+      "bifrost-core/src/main/java/com/bifrost/core/book/event/BookScanCompletedEvent.java": "sha256:b903544ccb0bbd373d10959f72fe0175bcbacf8d38b11a53c70665fc111d95a4",
+      "bifrost-core/src/main/java/com/bifrost/core/book/model/BookResult.java": "sha256:695d8bfdfa9259beb862d4a6e094b18d2793dbc2e6cd124d1ee21310b6cb935c",
+      "bifrost-core/src/main/java/com/bifrost/core/book/package-info.java": "sha256:ab7aea7b33122c53c8764bd709f2aeace5b134df177ef45b7862045ed12ffb1b",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/OrphanProgressService.java": "sha256:7fb460512cd59efac68d69bb798ec512058e58d55eb934ec018346c8feb9b630",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/OrphanProgressSettlementListener.java": "sha256:edfd368021a594c068f75ea5adb1dbe9b4c39498d10b916031f2afd61e2bab4e",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/ProgressBookMatcher.java": "sha256:2e668f3a2a875ad6cdadbda36be2b1621c683c646dcfc58be461abf541f0bb03",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/ReadingProgressService.java": "sha256:9ab0728222d489ceb8c8d9a85d8e572a93a88925e80161a8f919763079a4c8e0",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/SyncAccountInitializer.java": "sha256:dadd286025d515741b4b690914067fe1e68224f97a7a26e18adef62c15363e2f",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/SyncAccountService.java": "sha256:5bc634b6ee3bfbb12820c993373a7862db05023a36ec74773ae103c094e83297",
+      "bifrost-core/src/main/java/com/bifrost/core/book/sync/UnmatchedProgressScanTrigger.java": "sha256:9cf1615369591454966a95c3c92371974a1d205d188d9ff466af24efaa195c5f",
+      "bifrost-core/src/main/java/com/bifrost/core/config/BifrostProperties.java": "sha256:47a7d0eb9678edbdb10b7d29b0fa2e7dc33ac04f30b67f2c49510b4afdc39022",
+      "bifrost-core/src/main/java/com/bifrost/core/event/MusicScanCompletedEvent.java": "sha256:d37c58c09d6438997b5a041dfa704e230b1fbdfc68368295d0a56709a01b36f9",
+      "bifrost-core/src/main/java/com/bifrost/core/event/ScanStats.java": "sha256:5b5c48ac2bdb0f57fc1f8ddc8a3eaba0066082b5937651f195f63ce3020848f9",
+      "bifrost-core/src/main/java/com/bifrost/core/package-info.java": "sha256:99a3e53a904a3c60914693de16d220c3e65e8b2e8c097ed12ab2aba2e1826ee7",
+      "bifrost-core/src/main/java/com/bifrost/core/scan/ScanScheduler.java": "sha256:e39e269d37a800e1693fedce13899dfe70162afc0bcaf840c43b45040f19b2c6",
+      "bifrost-core/src/main/java/com/bifrost/core/security/AdminUserInitializer.java": "sha256:c4bd3762f3496987c166993e202e7231862ef794723b321b41227948e136e8d4",
+      "bifrost-core/src/main/java/com/bifrost/core/security/AuthSecret.java": "sha256:35e6acc5a3812c4fea1630b0575d56bdb2d0419ce521caf587dcdee82d123d53",
+      "bifrost-core/src/main/java/com/bifrost/core/security/AuthenticationService.java": "sha256:b3a89b04981a04a86977630290f2309e1ef32cca30e1139c598d004b8089fd34",
+      "bifrost-core/src/main/java/com/bifrost/core/security/PasswordCipher.java": "sha256:4ba2802cc865709e9487a9fdb829205bca5452c72a382948fad265b6df0f90b8",
+      "bifrost-core/src/main/java/com/bifrost/core/security/SubsonicTokenUtil.java": "sha256:d07085514c4765290e3b095c3c549314905f162864858154e3a6fa3fc5831b9a",
+      "bifrost-core/src/main/java/com/bifrost/core/video/package-info.java": "sha256:9271b864f7f94b6eb52790eb03a31616841ac550a4670e950a7d593fdb9f2339",
+      "bifrost-core/src/test/java/com/bifrost/core/audio/AlbumKeyTest.java": "sha256:c13df5de8a222c2a8877211b405912875eb7b95131525fb0c0e650e408621569",
+      "bifrost-core/src/test/java/com/bifrost/core/audio/AudioTagParserTest.java": "sha256:94aac8aa7d5954d6e7a89422ceced9ea6053df33809a43e83e095037ba9e7404",
+      "bifrost-core/src/test/java/com/bifrost/core/audio/MusicScanServiceTest.java": "sha256:4dd7dff95bcd62e2c54c8a489cd41cb30f23df038570b1817774a8d05f403821",
+      "bifrost-core/src/test/java/com/bifrost/core/audio/PinyinIndexTest.java": "sha256:1ca588a45ec7395fd2ad4484c25657e8fe24bdfb40f00b0fb1dc3b86f40abb84",
+      "bifrost-core/src/test/java/com/bifrost/core/audio/TestMediaFactory.java": "sha256:0e82569720dda10794a4dc03c58f1850f3a1268b74520ebf243035c4edd6dee0",
+      "bifrost-core/src/test/java/com/bifrost/core/book/BookCoverServiceTest.java": "sha256:6ca6c77ed78f568e6690c79a515312060296df5ace69040c597695aac38081d9",
+      "bifrost-core/src/test/java/com/bifrost/core/book/BookParserRegistryTest.java": "sha256:00ed8f10caeb447a827b5ce073e4a1e28b1383c68d06c0477923b01ae82e5378",
+      "bifrost-core/src/test/java/com/bifrost/core/book/BookScanServiceTest.java": "sha256:e3e8211680d64df2db669d87f438b32be21f0b23c499369e2397536af6904cef",
+      "bifrost-core/src/test/java/com/bifrost/core/book/DocumentFingerprintTest.java": "sha256:a79503449b4191bbdf0751b46e0fd5bf27dea41a0b52e027335d43fdac15b3bc",
+      "bifrost-core/src/test/java/com/bifrost/core/book/EpubBookParserTest.java": "sha256:804bd614fabb05ace5f7c056c5ea068c7f3790b170657d6587962d193947680e",
+      "bifrost-core/src/test/java/com/bifrost/core/book/PdfBookParserTest.java": "sha256:09d525caedf8de61ba152e3daa7ef2324a8e186fe1ed53d0cde4640d67768514",
+      "bifrost-core/src/test/java/com/bifrost/core/book/TestBookFactory.java": "sha256:e8840dbc5182be2ee358382bc938bcf8c0a667b76b8b5cc9dc38b4abb2bd3ab7",
+      "bifrost-core/src/test/java/com/bifrost/core/book/sync/OrphanProgressServiceTest.java": "sha256:6b4d740a126ea0074d6af63e022ce4bb275acd73daee9824ca57f83c17763251",
+      "bifrost-core/src/test/java/com/bifrost/core/book/sync/ProgressBookMatcherTest.java": "sha256:b760115501b0bc0301d672b2436af7340fefc860dc471a1b37d20f0bd84ce36e",
+      "bifrost-core/src/test/java/com/bifrost/core/book/sync/ReadingProgressServiceTest.java": "sha256:b012c4a28a907a9c79c00364d067cc5e0a91495f7c539c737cb5a144ff8ca04d",
+      "bifrost-core/src/test/java/com/bifrost/core/book/sync/SyncAccountInitializerTest.java": "sha256:01f9ddeca93979e98c91ecdf01e679975521891566074e8b03be8e9449a01ca0",
+      "bifrost-core/src/test/java/com/bifrost/core/book/sync/SyncAccountServiceTest.java": "sha256:f9bef0ec38ffbdfe88927f4022cac2eb48a570e633d7cb1d8858a4efb241b33d",
+      "bifrost-dashboard/package.json": "sha256:df2024d2d2b09bd3dbb3f84b69da944bd290935c75997af271f3d406de392f3d",
+      "bifrost-dashboard/pnpm-lock.yaml": "sha256:d115fae9ab57e181cc777c84d240bf9e424f21485e027dd616bbfb68213d9fbf",
+      "bifrost-domain/pom.xml": "sha256:8db3f86cc86d0677c75fe7a02341d9222253a552cdfaca2bb675604f3b878bc8",
+      "bifrost-domain/src/main/java/com/bifrost/domain/converter/InstantMillisConverter.java": "sha256:15b82f773b656e690f9c77ca31846585e9e164ce40d323ee67f603437790fd1e",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Album.java": "sha256:32e8cfb6ae501b732e94ec956673760d6e55e84c35d9fe65f51b6216832493e5",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Artist.java": "sha256:7c33b360380b817362c177c06c2b24dc0fd2858ad1c5a2d2f4c813a68f521287",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/BaseEntity.java": "sha256:b6442a92aa438e6fb5963d1882c1f9ee699e34f07741ac282adfcf427edc4e18",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Book.java": "sha256:365721e35ec368bdf255d20b52a00e055f209e7318f023ee025cb712ad0c51df",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Bookmark.java": "sha256:c2a58f4b11447d2f54a2ca6aaa84a46f6ee0932b8b6592866ff9152a6084a194",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/LibraryRoot.java": "sha256:9bf96051db9d34d36c569653dcc2190f477a8857f05896cb797064cc7c4e6b44",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/PlayQueue.java": "sha256:c1d97fddc091dd673700cfe7c0420d809b46a371ff6f34a4c454c3ea00371b57",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/PlayQueueEntry.java": "sha256:8d1b19e9170b4876b9c448c6a520f30483be949deafb88c47846a026e5f2049b",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Playlist.java": "sha256:7a12e3a2c5b80ba20bf72fbb2e5a6621f18583fbd461769d91803243c2c09841",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/PlaylistEntry.java": "sha256:f8d687e28aab1b7fbe0382a43670dfcdffc4a5703b214bb9fa46aac35db92129",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/ReadingProgress.java": "sha256:fbc4be08ccb8c61c1be03fae5111d9c8707e916a89697f261f4c9064ccc109fb",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/SyncAccount.java": "sha256:5bc73571928ff966672596c49d0443b98c1566851f818a2e7e902b8d7647a94c",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/SyncDevice.java": "sha256:f945c1755d030b2228c00f9b7c3bf981368ce46a7d8431be3038386a5f9c73d8",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/Track.java": "sha256:f60c033721a3fab770e9687ac5abd1bdea7425a69cf1257edd3ec3ce94faf670",
+      "bifrost-domain/src/main/java/com/bifrost/domain/entity/User.java": "sha256:2dde9e7a45a277a5899a0fe5c79ba332fd2da15a5bc7c6d29116c92288db22aa",
+      "bifrost-domain/src/main/java/com/bifrost/domain/enums/MediaType.java": "sha256:965f860604f3d1542900fe3ef7797b376e77a4abf94165fab4221a8fa0435c92",
+      "bifrost-domain/src/main/java/com/bifrost/domain/enums/ProgressMatchSource.java": "sha256:ec09c84f58ed418c1c8d99cec59da30b96871714853ae716c131b9e2631564ed",
+      "bifrost-domain/src/main/java/com/bifrost/domain/enums/ScanStatus.java": "sha256:637f6589708a3928e910ae871a2481e895a73766f0f241057ba6968488f6a4fd",
+      "bifrost-domain/src/main/java/com/bifrost/domain/enums/UserRole.java": "sha256:8b342f38f34d71211ff42c6d208fc05c3e164fa21b67c3955d3346c7f92bd526",
+      "bifrost-domain/src/main/java/com/bifrost/domain/package-info.java": "sha256:ed8509862ee045ca6df999a50cdc8b9f3b00b51dae504537d55a869d321c5475",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/AlbumRepository.java": "sha256:7e5d489754cc1f410c97b43a5d63df43e996fa9787cb84a91b0a8214e0787c0c",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/ArtistRepository.java": "sha256:89cc6d603a3fdc2ff104d3fee017b77c919cd6545ad29f96876e5c3a28e2797d",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/BookRepository.java": "sha256:646e9c29f48d89d467375202ece5a642a89a456badca36e7a43e0e7a739de0c7",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/BookmarkRepository.java": "sha256:18c9b32aac6aabd12161fd423298b08335d293a3c79c368f87ec666c3b15f57f",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/LibraryRootRepository.java": "sha256:d62f3b36710dd724e41bb5fe5d71586bcd41f084ffb3c7663ae9296fa5cb865d",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/PlayQueueEntryRepository.java": "sha256:7f360c1d950d956a6939a048937ee995690d9a3d95c68644a247803e01431eaf",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/PlayQueueRepository.java": "sha256:081cd97a4f155691ffc98f81008fe5a95f28483e406f44ec0cf230f0f73b424d",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/PlaylistEntryRepository.java": "sha256:a8bb3ab07cff5905ec0c028e648552fa5aa1e025bd7e15c6153d038f7131a701",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/PlaylistRepository.java": "sha256:f8b0cabe55f86a98e091bbc0a5d7f431ee7e51d6922d8aa52f42216e4b9c6eba",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/ReadingProgressRepository.java": "sha256:9d6a1c06bcf0c9da2acee9b1991d44fc958794282652c67f01732308ab8639c5",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/SyncAccountRepository.java": "sha256:61caef166dca170b97432c33f7d9f7923032e9b37a00cc34f21da6930679082a",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/SyncDeviceRepository.java": "sha256:4b5abc1fb53b0cc625db9aae89950605c2d1167a152224728b7114d6a84ee3d0",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/TrackRepository.java": "sha256:5cb0fc66aab54746206ed1a7dbe35f636b5b2b469e1da2463e51c31ff017831e",
+      "bifrost-domain/src/main/java/com/bifrost/domain/repo/UserRepository.java": "sha256:3dc1719d5aecbb02bfe8a350ef87ce74475d543cb9d92ae8081ee933c19b995f",
+      "docker/docker-compose.yml": "sha256:3df4bc2398b0f7515ca4e235f524a6f87bb4865993cb03388c48415f10f890ba",
+      "mvnw": "sha256:7e6e5d26712efd78140f2f63dafe8d17028f6c5c97ac1f746a043110b7a1d9ad",
+      "pom.xml": "sha256:79e76db0aed908cf813d12f76b150bc08c62a6b0bdefb88518b321f11235f0e5"
+    }
+  },
+  "version": 2
+}

@@ -1,0 +1,4 @@
+{
+  "defaultRunConfiguration": "spring-boot.maven:bifrost-bootstrap",
+  "version": 1
+}

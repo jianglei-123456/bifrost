@@ -1,0 +1,84 @@
+/*
+ * 深空聆听室 · 彩虹桥 —— 设计系统 token
+ * 单一事实源：docs/design.md
+ */
+
+:root {
+  /* ── 色彩（design.md §2）── */
+  --ink: #0b0e14; /* 深空底 · 页面背景 */
+  --panel: #12161f; /* 面板 · 卡片/侧栏/表格 */
+  --panel-raised: #1a2130; /* 浮起层 · hover/弹层/激活底 */
+  --line: #1e2636; /* 分隔线/描边 1px */
+  --text: #e9edf5; /* 主文字 */
+  --text-dim: #98a2b3; /* 次要文字/说明/占位 */
+
+  /* 语义色复用光谱端点，整站色相收敛在光谱内 */
+  --success: #3ddc97;
+  --danger: #ff5d73;
+  --warn: #ffb454;
+  --info: #4cc9f0;
+
+  /* 签名光谱（design.md §5）—— 只用于品牌/拱桥/激活线/焦点/空状态 */
+  --spectrum: linear-gradient(90deg, #ff5d73, #ffb454, #3ddc97, #4cc9f0, #7b6cff);
+  --spectrum-1: #ff5d73;
+  --spectrum-2: #ffb454;
+  --spectrum-3: #3ddc97;
+  --spectrum-4: #4cc9f0;
+  --spectrum-5: #7b6cff;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* ── 字体（design.md §3）── */
+  --font-display:
+    'Space Grotesk', -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei',
+    'Segoe UI', sans-serif;
+  --font-body:
+    -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --sidebar-w: 232px;
+
+  /* ── Element Plus 深色变量映射到本设计系统 ── */
+  --el-bg-color: var(--panel);
+  --el-bg-color-overlay: var(--panel-raised);
+  --el-bg-color-page: var(--ink);
+  --el-fill-color: var(--panel-raised);
+  --el-fill-color-light: var(--panel-raised);
+  --el-fill-color-lighter: var(--panel-raised);
+  --el-fill-color-extra-light: var(--panel-raised);
+  --el-fill-color-dark: #232c3f;
+  --el-fill-color-darker: #232c3f;
+  --el-fill-color-blank: var(--panel);
+  --el-border-color: var(--line);
+  --el-border-color-light: var(--line);
+  --el-border-color-lighter: var(--line);
+  --el-border-color-extra-light: var(--line);
+  --el-border-color-dark: #2a3550;
+  --el-border-color-darker: #2a3550;
+  --el-text-color-primary: var(--text);
+  --el-text-color-regular: var(--text);
+  --el-text-color-secondary: var(--text-dim);
+  --el-text-color-placeholder: #5d6a82;
+  --el-text-color-disabled: #4a5570;
+  --el-color-primary: #7b6cff;
+  --el-color-primary-light-3: #9d92ff;
+  --el-color-primary-light-5: #b5adff;
+  --el-color-primary-light-7: #cfcaff;
+  --el-color-primary-light-8: #ddd9ff;
+  --el-color-primary-light-9: #eceaff;
+  --el-color-primary-dark-2: #6a5ce6;
+  --el-color-success: var(--success);
+  --el-color-danger: var(--danger);
+  --el-color-warning: var(--warn);
+  --el-color-info: var(--info);
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --el-box-shadow-light: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --el-box-shadow-lighter: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --el-mask-color: rgba(4, 6, 10, 0.72);
+  --el-disabled-bg-color: #10141d;
+  --el-disabled-border-color: var(--line);
+  --el-font-family: var(--font-body);
+}
